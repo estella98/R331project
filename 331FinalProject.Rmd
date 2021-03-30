@@ -1,5 +1,7 @@
 ---
-title: "331FinalProject"
+title: "STAT 331 Final Project"
+author: "Maxine, Estella, Judy, Weiwei"
+date: "04/12/2021"
 output: pdf_document
 ---
 
@@ -7,22 +9,75 @@ output: pdf_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+# Requirement of the project 
+Your 7–10 page report must contain the following components: 
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+- 1. Summary:
+A maximum of 200 words describing the objective of the report, an overview of the statistical analysis, and summary of the main results.
 
-```{r cars}
-summary(cars)
+- 2. Objective:
+Describe your goals for the analysis.
+
+- 3. Exploratory Data Analysis:
+Conduct exploratory data analyses: report summary statistics, visualize data (histograms, scatter plots, etc.). Report on any interesting findings and comment on how these inform the rest of your analysis.
+
+- 4. Methods:
+Describe your statistical analysis: What is your model? Did you use any transformations or extensions of the basic multiple linear regression model? How did you select a model? Does the model fit the data well? Are the necessary assumptions met? Be sure to explain and justify your decisions.
+
+- 5. Results:
+Report on the findings of your analysis
+
+- 6. Discussion:
+Comment on your findings/conclusions; describe any limitations of your analysis.
+
+
+# 1. Summary
+A maximum of 200 words describing the objective of the report, an overview of the statistical analysis, and summary of the main results.
+
+# 2. Objective 
+
+The goal of this project is to analyze the pollutants.csv data and write a report on your analysis. The specific goals of your analysis are up to you to decide.
+
+# 3. Exploratory Data Analysis
+Conduct exploratory data analyses: report summary statistics, visualize data (histograms, scatter plots, etc.). Report on any interesting findings and comment on how these inform the rest of your analysis.
+
+can use this as a tutorial https://r4ds.had.co.nz/exploratory-data-analysis.html
+
+
+Take a peak at the first 5 entries
+```{r pollutants}
+# CHANGE ABSOLUTE PATH
+# pollutants <- read.csv("~/R331project/data/pollutants.csv")
+head(pollutants)
 ```
 
-## Including Plots
+## Covariates
+```{r covariates}
+names(pollutants)
+```
+Note that "edu_cat", "race_cat", "male", "smokenow" are categorical data. 
 
-You can also embed plots, for example:
+```{r histograms}
+# 1 = Less Than 9th Grade or 9-11th Grade (Includes 12th grade with no diploma) 
+# 2 = High School Grad/GED or Equivalent
+# 3 = Some College or AA degree
+# 4 = College Graduate
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+edu_factor=as.factor(pollutants$edu_cat)
+plot(edu_factor, 
+     main="Distribution of Education",
+     xlab="Education Level")
+
+# 1 = Other Race (Including Multi-Racial);
+# 2 = Mexican American; 
+# 3 = Non-Hispanic Black; 
+# 4 = Non-Hispanic White
+
+race_factor=as.factor(pollutants$race_cat)
+plot(race_factor, 
+     main="Distribution of Race",
+     xlab="Race Level")
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
