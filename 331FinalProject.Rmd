@@ -83,7 +83,7 @@ plot(race_factor,
 
 ```{r histograms}
 # Estella's work 1
-setwd("~/Desktop/stat341/R331project")
+# setwd("~/Desktop/stat341/R331project")
 pollutants <- read.csv("pollutants.csv", header = TRUE)
 library(corrplot)
 library(ggplot2)
