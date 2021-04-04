@@ -48,7 +48,10 @@ can use this as a tutorial https://r4ds.had.co.nz/exploratory-data-analysis.html
 Take a peak at the first 5 entries
 ```{r pollutants}
 # CHANGE ABSOLUTE PATH
-# pollutants <- read.csv("~/R331project/data/pollutants.csv")
+# setwd("~/Desktop/stat341/R331project")
+setwd("~/School/4A/STAT 331/R331project/data")
+
+pollutants <- read.csv("pollutants.csv", header = TRUE)
 head(pollutants)
 ```
 
@@ -81,26 +84,22 @@ plot(race_factor,
 ```
 
 
-```{r histograms}
+```{r correlations}
 # Estella's work 1
-# setwd("~/Desktop/stat341/R331project")
-pollutants <- read.csv("pollutants.csv", header = TRUE)
 library(corrplot)
 library(ggplot2)
- summary(pollutants)
+
+summary(pollutants)
 POP_PCB = c("POP_PCB1", "POP_PCB2","POP_PCB3", "POP_PCB4","POP_PCB5", "POP_PCB6","POP_PCB7", "POP_PCB8","POP_PCB9", "POP_PCB10", "POP_PCB11")
 POP_PCB_data <- pollutants [, POP_PCB]
 cc = cor(POP_PCB_data , method = "spearman")
-cc
-```
-```{r histograms}
-# Estella's work 2
+
 # cluster my POP_PCB so that those with similar patterns of correlation coefficients are closer together. 
 corrplot(cc, tl.col = "black", order = "hclust", hclust.method = "average", addrect = 4, tl.cex = 0.7)
 #https://jkzorz.github.io/2019/06/11/Correlation-heatmaps.html
 ```
 
-```{r histograms}
+```{r interactions}
 # Estella's work 3
 f <- as.formula((paste("length", paste("(", paste(POP_PCB, collapse = " + "), ")^2"), sep = " ~")))
 m <- lm(f, data = pollutants)
