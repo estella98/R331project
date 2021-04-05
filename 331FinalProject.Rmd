@@ -107,4 +107,40 @@ m <- lm(f, data = pollutants)
 summary(m)
 ```
 
+```{r}
+# Judy's work Part 1
+# testing non-linearity in SLR
+# if for any covariate, residual vs x for M1 has a pattern and
+# residual vs x for M2 seems random, then y has a nonlinear
+# relationship with with x.
+# M1: fitting y to x
+# M2: fitting y to x^2
+par(mfrow=c(1, 3))
+outcome <- pollutants$length
+check <- function(x) {
+  M1 <- lm(outcome ~ x)
+  print(paste("residual for M1: ", sigma(M1)))
+  M2 <- lm(outcome ~ x + I(x^2))
+  print(paste("residual for M2: ", sigma(M2)))
+  plot(x, M1$residual)
+  plot(x, M2$residual)
+  plot(x, outcome)
+}
+list <- list(pollutants$ageyrs, pollutants$yrssmoke,
+             pollutants$BMI, pollutants$ln_lbxcot,
+             pollutants$whitecell_count, pollutants$lymphocyte_pct, 
+             pollutants$monocyte_pct, pollutants$eosinophils_pct, 
+             pollutants$basophils_pct, pollutants$neutrophils_pct)
+for (column in list) {
+  check(column)
+}
+  
+```
 
+```{r}
+# Judy's work Part 2
+# testing non-linearity in MLR
+library(car)
+M <- lm (length ~ ., data=pollutants)
+avPlots(M)
+```
