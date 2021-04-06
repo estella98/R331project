@@ -48,11 +48,13 @@ can use this as a tutorial https://r4ds.had.co.nz/exploratory-data-analysis.html
 Take a peak at the first 5 entries
 ```{r pollutants}
 # CHANGE ABSOLUTE PATH
-#setwd("~/Desktop/stat341/R331project/data")
-# setwd("~/School/4A/STAT 331/R331project/data")
+# setwd("~/Desktop/stat341/R331project/data")
+setwd("~/School/4A/STAT 331/R331project/data")
 
 pollutants <- read.csv("pollutants.csv", header = TRUE)
 head(pollutants)
+
+summary(pollutants)
 ```
 
 ## Covariates
@@ -66,30 +68,61 @@ Note that "edu_cat", "race_cat", "male", "smokenow" are categorical data.
 # 2 = High School Grad/GED or Equivalent
 # 3 = Some College or AA degree
 # 4 = College Graduate
-
-edu_factor=as.factor(pollutants$edu_cat)
-plot(edu_factor, 
-     main="Distribution of Education",
-     xlab="Education Level")
+edu_factor=factor(pollutants$edu_cat)
 
 # 1 = Other Race (Including Multi-Racial);
 # 2 = Mexican American; 
 # 3 = Non-Hispanic Black; 
 # 4 = Non-Hispanic White
+race_factor=factor(pollutants$race_cat, 
+                      labels = c("Other", "Mexican", "Black", "White"))
 
-race_factor=as.factor(pollutants$race_cat)
+# 0 = does not currently smoke; 
+# 1 = currently smokes
+smoke_factor=factor(pollutants$smokenow, labels = c("Non-Smoker", "Smoker"))
+
+# 0 = female, 1 = male
+gender_factor=factor(pollutants$male, labels = c("female", "male"))
+
+# put bargraphs for categorical data onto one picture
+par(mfrow=c(2,2))
+
+
+plot(edu_factor, 
+     main="Distribution of Education",
+     xlab="Education Level Count")
+
 plot(race_factor, 
      main="Distribution of Race",
-     xlab="Race Level")
-```
+     xlab="Race Count")
 
+plot(smoke_factor, 
+     main="Distribution of Current Smokers",
+     xlab="Smokers Count")
+
+plot(gender_factor, 
+     main="Distribution of Gender",
+     xlab="Gender Count")
+```
+```{r boxplots}
+# PC 1-6
+boxplot(pollutants[, 3:8])
+
+# PC 7-11
+boxplot(pollutants[, 9:13])
+
+# Doxin
+boxplot(pollutants[, 14:16])
+
+# Furan
+boxplot(pollutants[, 17:20])
+```
 
 ```{r correlations}
 # Estella's work 1
 library(corrplot)
 library(ggplot2)
 
-summary(pollutants)
 POP_PCB = c("POP_PCB1", "POP_PCB2","POP_PCB3", "POP_PCB4","POP_PCB5", "POP_PCB6","POP_PCB7", "POP_PCB8","POP_PCB9", "POP_PCB10", "POP_PCB11")
 POP_PCB_data <- pollutants [, POP_PCB]
 cc = cor(POP_PCB_data , method = "spearman")
