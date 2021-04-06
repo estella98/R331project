@@ -52,6 +52,7 @@ setwd("~/Desktop/stat341/R331project/data")
 # setwd("~/School/4A/STAT 331/R331project/data")
 
 pollutants <- read.csv("pollutants.csv", header = TRUE)
+pollutants <- subset(pollutants , select = -X )
 head(pollutants)
 ```
 
@@ -98,7 +99,6 @@ cc = cor(POP_PCB_data , method = "spearman")
 corrplot(cc, tl.col = "black", order = "hclust", hclust.method = "average", addrect = 4, tl.cex = 0.7)
 #https://jkzorz.github.io/2019/06/11/Correlation-heatmaps.html
 ```
-
 ```{r interactions}
 # Estella's work 3
 f <- as.formula((paste("length", paste("(", paste(POP_PCB, collapse = " + "), ")^2"), sep = " ~")))
@@ -107,12 +107,21 @@ summary(m)
 ```
 
 ```{r interactions}
+# Estella's work 4 
+# setting threshold of pvalue to be 0.05 and assess possible interaction terms
+pvalues <- summary(m)$coefficients[,4]
+p_threshold = 0.05
+selected <-which(pvalues<= p_threshold)
+names(selected)
+```
+
+```{r interactions}
 #stepwise parameters selection without any interaction terms
 M0 <- lm(length ~ 1, data = pollutants) # minimal model
 Mfull <- lm(length ~ .,
             data= pollutants )
 
-df.penalty <- 2 # this is the k penalty
+
 
 ## 2 corresponds to AIC
 ## log(n) corresponds to BIC
@@ -137,3 +146,35 @@ system.time({
 Mstep_AIC
 Mstep_BIC
 ```
+
+```{r interactions}
+#stepwise parameters selection with any interaction terms
+M0 <- lm(length ~ 1, data = pollutants) # minimal model
+#tail to remove length column
+single <- paste(tail(colnames(pollutants),-1), collapse = " + ")
+#tail to remove intercept column
+interaction <- paste(tail(names(selected),-1), collapse = " + ")
+f_interaction <- as.formula((paste("length", paste("(", single,"+", interaction, ")"), sep = " ~")))
+Mfull <- lm(f_interaction, data = pollutants)
+Mstart <- lm(f_interaction, data = pollutants)
+
+# stepwise AIC
+Mstart <- lm(length ~ .,
+            data= pollutants )
+system.time({
+  Mstep_AIC <- step(object = Mstart,
+                scope = list(lower = M0, upper = Mfull),
+                direction = "both", trace = 0, k = 2)
+})
+
+#stepwiseBIC
+system.time({
+  Mstep_BIC <- step(object = Mstart,
+                scope = list(lower = M0, upper = Mfull),
+                direction = "both", trace = 0, k = log(nrow(pollutants)))
+})
+
+#stepwiseB_Adjusted R2
+Mstep_AIC
+Mstep_BIC
+``` 
