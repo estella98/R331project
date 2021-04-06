@@ -52,7 +52,6 @@ setwd("~/Desktop/stat341/R331project/data")
 # setwd("~/School/4A/STAT 331/R331project/data")
 
 pollutants <- read.csv("pollutants.csv", header = TRUE)
-pollutants <- subset(pollutants , select = -X )
 head(pollutants)
 ```
 
@@ -116,10 +115,15 @@ names(selected)
 ```
 
 ```{r interactions}
+# rewrite the pollutants dataframe
+pollutants_clean <- subset(pollutants , select = -X )
+```
+
+```{r interactions}
 #stepwise parameters selection without any interaction terms
-M0 <- lm(length ~ 1, data = pollutants) # minimal model
+M0 <- lm(length ~ 1, data = pollutants_clean) # minimal model
 Mfull <- lm(length ~ .,
-            data= pollutants )
+            data= pollutants_clean )
 
 
 
@@ -128,7 +132,7 @@ Mfull <- lm(length ~ .,
 
 # stepwise AIC
 Mstart <- lm(length ~ .,
-            data= pollutants )
+            data= pollutants_clean )
 system.time({
   Mstep_AIC <- step(object = Mstart,
                 scope = list(lower = M0, upper = Mfull),
@@ -149,18 +153,18 @@ Mstep_BIC
 
 ```{r interactions}
 #stepwise parameters selection with any interaction terms
-M0 <- lm(length ~ 1, data = pollutants) # minimal model
+M0 <- lm(length ~ 1, data = pollutants_clean) # minimal model
 #tail to remove length column
-single <- paste(tail(colnames(pollutants),-1), collapse = " + ")
+single <- paste(tail(colnames(pollutants_clean),-1), collapse = " + ")
 #tail to remove intercept column
 interaction <- paste(tail(names(selected),-1), collapse = " + ")
 f_interaction <- as.formula((paste("length", paste("(", single,"+", interaction, ")"), sep = " ~")))
-Mfull <- lm(f_interaction, data = pollutants)
-Mstart <- lm(f_interaction, data = pollutants)
+Mfull <- lm(f_interaction, data = pollutants_clean)
+Mstart <- lm(f_interaction, data = pollutants_clean)
 
 # stepwise AIC
 Mstart <- lm(length ~ .,
-            data= pollutants )
+            data= pollutants_clean )
 system.time({
   Mstep_AIC <- step(object = Mstart,
                 scope = list(lower = M0, upper = Mfull),
