@@ -48,7 +48,7 @@ can use this as a tutorial https://r4ds.had.co.nz/exploratory-data-analysis.html
 Take a peak at the first 5 entries
 ```{r pollutants}
 # CHANGE ABSOLUTE PATH
-#setwd("~/Desktop/stat341/R331project/data")
+setwd("~/Desktop/stat341/R331project/data")
 # setwd("~/School/4A/STAT 331/R331project/data")
 
 pollutants <- read.csv("pollutants.csv", header = TRUE)
@@ -104,4 +104,36 @@ corrplot(cc, tl.col = "black", order = "hclust", hclust.method = "average", addr
 f <- as.formula((paste("length", paste("(", paste(POP_PCB, collapse = " + "), ")^2"), sep = " ~")))
 m <- lm(f, data = pollutants)
 summary(m)
+```
+
+```{r interactions}
+#stepwise parameters selection without any interaction terms
+M0 <- lm(length ~ 1, data = pollutants) # minimal model
+Mfull <- lm(length ~ .,
+            data= pollutants )
+
+df.penalty <- 2 # this is the k penalty
+
+## 2 corresponds to AIC
+## log(n) corresponds to BIC
+
+# stepwise AIC
+Mstart <- lm(length ~ .,
+            data= pollutants )
+system.time({
+  Mstep_AIC <- step(object = Mstart,
+                scope = list(lower = M0, upper = Mfull),
+                direction = "both", trace = 0, k = 2)
+})
+
+#stepwiseBIC
+system.time({
+  Mstep_BIC <- step(object = Mstart,
+                scope = list(lower = M0, upper = Mfull),
+                direction = "both", trace = 0, k = log(nrow(pollutants)))
+})
+
+#stepwiseB_Adjusted R2
+Mstep_AIC
+Mstep_BIC
 ```
