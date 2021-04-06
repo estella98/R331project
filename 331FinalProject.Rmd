@@ -105,6 +105,9 @@ plot(gender_factor,
      main="Distribution of Gender",
      xlab="Gender Count")
 ```
+
+We see that we generally have more non-smokers than smokers and more white people than other race. The distribution of gender and education are relatively close.
+
 ```{r boxplots}
 # PC 1-6
 boxplot(pollutants[, 3:8])
@@ -118,6 +121,12 @@ boxplot(pollutants[, 14:16])
 # Furan
 boxplot(pollutants[, 17:20])
 ```
+
+We see that there are some extreme outliers in some of the covariates, however note that the maximum PCB values mostly came from one observation 
+```{r outlier}
+pollutants[436, 3:12]
+```
+
 
 ```{r correlations}
 # Estella's work 1
