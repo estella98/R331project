@@ -219,7 +219,7 @@ Describe your statistical analysis: What is your model? Did you use any transfor
 
 ```{r splitdata}
 train_data <- pollutants[1:600,]
-test_data <- pollutants[501:nrow(pollutants),]
+test_data <- pollutants[601:nrow(pollutants),]
 ```
 
 ```{r buildmodel}
