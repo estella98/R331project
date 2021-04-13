@@ -346,3 +346,50 @@ mean((test_data$length - predAICInteraction)^2)
 mean((test_data$length - predBICInteraction)^2)
 ``` 
 
+```{r}
+# estella's work cross validation using ridge on BIC model
+
+library(glmnet)
+Y <-  train_data[, c("length")] 
+BIC_train_X <-  train_data[, c("POP_furan3", "ageyrs")] # Features selected by BIC without interactions
+BIC_test_X <-  test_data[, c("POP_furan3", "ageyrs")] 
+
+cvfit_ridge <- cv.glmnet(x = data.matrix(BIC_train_X ), y = Y, alpha = 0) # use ridge
+# plot(cvfit_lasso)
+
+#estimated betas for min lambda
+coef(cvfit_ridge, s = "lambda.min")
+pred_ridge_BIC <- predict(cvfit_ridge, newx = data.matrix(BIC_test_X), s = "lambda.min")
+mean((test_data$length - pred_ridge_BIC)^2)
+
+```
+!!! suspicious, this value is higher than the mse without cross validation and ridge 
+
+
+----- !!!need to investigate the behavior of glmnet, whether we need to manually do one hot encoding.
+------ check the two chunks below for difference 
+```{r}
+# estella's work cross validation using lasso to do model selections
+# Load libraries
+library(data.table)
+library(mltools)
+train_df <- as.data.table(train_data)
+train_oh <- one_hot(train_df )
+
+# try lasso and let lasso do the parameters selection
+all_train_oh_X <- train_oh[, -1] # remove y 
+cvfit_lasso_oh <- cv.glmnet(x = data.matrix(all_train_oh_X), y = Y, alpha = 1) # use lasso
+coef(cvfit_lasso_oh, s = "lambda.min")
+# cvfit_lasso <- cv.glmnet(x = data.matrix(), y = Y, alpha = 0) # use ridge
+
+``` 
+
+```{r}
+# try lasso and let lasso do the parameters selection
+all_train_X <- train_data[, names(train_data) != "length"]
+cvfit_lasso <- cv.glmnet(x = data.matrix(all_train_X), y = Y, alpha = 1) # use lasso
+coef(cvfit_lasso, s = "lambda.min")
+# cvfit_lasso <- cv.glmnet(x = data.matrix(), y = Y, alpha = 0) # use ridge
+``` 
+
+
