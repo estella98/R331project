@@ -48,7 +48,7 @@ can use this as a tutorial https://r4ds.had.co.nz/exploratory-data-analysis.html
 Take a peak at the first 5 entries
 ```{r dataset}
 # CHANGE ABSOLUTE PATH
-# setwd("~/Desktop/stat341/R331project/data")
+setwd("~/Desktop/stat341/R331project/data")
 # setwd("~/School/4A/STAT 331/R331project/data")
 # setwd("~/Desktop/R331project/data")
 # setwd("C:/Users/huawei/Desktop/R331project/data")
@@ -231,6 +231,14 @@ f <- as.formula(
 m_pcb <- lm(f, data = pollutants)
 summary(m_pcb)
 ```
+```{r selectinteractions}
+# Estella's work 4 
+# setting threshold of pvalue to be 0.05 and assess possible interaction terms
+pvalues <- summary(m_pcb)$coefficients[,4]
+p_threshold = 0.05
+selected <- which(pvalues <= p_threshold)
+names(selected)
+```
 
 ```{r dioxin_interactions}
 f_dioxin <- as.formula(
@@ -247,15 +255,8 @@ f_furan <- as.formula(
 m_furan <- lm(f_furan, data = pollutants)
 summary(m_furan)
 ```
+ We observe no interaction should be included for Pop_furan and Popl_dioxin
 
-```{r selectinteractions}
-# Estella's work 4 
-# setting threshold of pvalue to be 0.05 and assess possible interaction terms
-pvalues <- summary(m_pcb)$coefficients[,4]
-p_threshold = 0.05
-selected <- which(pvalues <= p_threshold)
-names(selected)
-```
 
 # 4. Methods:
 Describe your statistical analysis: What is your model? Did you use any transformations or extensions of the basic multiple linear regression model? How did you select a model? Does the model fit the data well? Are the necessary assumptions met? Be sure to explain and justify your decisions.
