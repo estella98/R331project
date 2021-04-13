@@ -24,10 +24,10 @@ can use this as a tutorial https://r4ds.had.co.nz/exploratory-data-analysis.html
 Import dataset
 ```{r dataset}
 # CHANGE ABSOLUTE PATH
-
 # setwd("~/Desktop/stat341/R331project/data")
-setwd("~/School/4A/STAT 331/R331project/data")
+# setwd("~/School/4A/STAT 331/R331project/data")
 # setwd("~/Desktop/R331project/data")
+# setwd("C:/Users/huawei/Desktop/R331project/data")
 
 pollutants_raw <- read.csv("pollutants.csv", header = TRUE)
 names(pollutants_raw)
@@ -142,7 +142,6 @@ boxplot(pollutants[, 31], xlab="Smoke Yrs")
 boxplot(pollutants[, 33], xlab="Log cotinine")
 ```
 
-
 We see that there are some extreme outliers in some concentration of PCBs, Dioxins, and Furan. The maximum values are sometimes over double the magnitude of the second largest. 
 
 However with a little investigation in \@ref(#outlier-entries), we see that outliers for PCB values mostly came from one observation.
@@ -154,7 +153,6 @@ pollutants[436, 3:12]
 Similarly, the most extreme outliers for different types of Dioxin and Furan also came from the same entry of data:
 
 * Entry 285 contain the highest value for Dioxin 1 and 3, which are extreme outliers as we can see from the boxplots
-
 * Entry 559 contain the highest value for Furan 2 and 4, where Furan 4 has an extreme outlier
 
 Other covariates do not have a common entry that contribute to the outliers.
@@ -168,20 +166,46 @@ Other covariates do not have a common entry that contribute to the outliers.
 library(corrplot)
 library(ggplot2)
 
-POP_PCB = c("POP_PCB1", "POP_PCB2","POP_PCB3", "POP_PCB4", 
+POP_PCB = c("POP_PCB1", "POP_PCB2","POP_PCB3", "POP_PCB4",
             "POP_PCB5", "POP_PCB6","POP_PCB7", "POP_PCB8",
             "POP_PCB9", "POP_PCB10", "POP_PCB11")
+
 POP_PCB_data <- pollutants [, POP_PCB]
 cc = cor(POP_PCB_data , method = "spearman")
 
-# cluster my POP_PCB so that those with similar patterns 
-# of correlation coefficients are closer together. 
+# cluster my POP_PCB so that those with similar patterns
+# of correlation coefficients are closer together.
 # https://jkzorz.github.io/2019/06/11/Correlation-heatmaps.html
-corrplot(cc, tl.col = "black", order = "hclust", hclust.method = "average", 
+corrplot(cc, tl.col = "black", order = "hclust", hclust.method = "average",
          addrect = 4, tl.cex = 0.7)
 ```
 
-## Correlation among PCB Concentrations
+## Correlation among Dioxin Concentrations
+```{r dioxin_correlations}
+# Weiwei's work Part 1
+POP_dioxin = c("POP_dioxin1", "POP_dioxin2","POP_dioxin3")
+POP_dioxin_data <- pollutants [, POP_dioxin]
+
+# cluster my POP_dioxin so that those with similar patterns
+# of correlation coefficients are closer together.
+cc.dioxin = cor(POP_dioxin_data , method = "spearman")
+corrplot(cc.dioxin, tl.col = "black", order = "hclust",
+         hclust.method = "average", addrect = 3, tl.cex = 0.7)
+```
+
+## Correlation among Furan Concentrations
+```{r furan_correlations}
+# Weiwei's work Part 2
+POP_furan = c("POP_furan1", "POP_furan2","POP_furan3","POP_furan4")
+POP_furan_data <- pollutants [, POP_furan]
+
+# cluster my POP_dioxin so that those with similar patterns
+# of correlation coefficients are closer together.
+cc.furan = cor(POP_furan_data , method = "spearman")
+corrplot(cc.furan, tl.col = "black", order = "hclust",
+         hclust.method = "average", addrect = 4, tl.cex = 0.7)
+```
+
 
 # 4. Methods:
 Describe your statistical analysis: What is your model? Did you use any transformations or extensions of the basic multiple linear regression model? How did you select a model? Does the model fit the data well? Are the necessary assumptions met? Be sure to explain and justify your decisions.
@@ -190,6 +214,7 @@ Describe your statistical analysis: What is your model? Did you use any transfor
 train_data <- pollutants[1:600,]
 test_data <- pollutants[601:nrow(pollutants),]
 ```
+
 
 ```{r linearity}
 # Judy's work Part 1
@@ -230,23 +255,42 @@ M <- lm (length ~ ., data=pollutants)
 avPlots(M)
 ```
 
-```{r interactions}
+
+```{r pcbinteractions}
 # Estella's work 3
 f <- as.formula(
   paste("length", paste("(", paste(POP_PCB, collapse = "+"), ")^2"), sep="~"))
 
-m <- lm(f, data = pollutants)
-summary(m)
+m_pcb <- lm(f, data = pollutants)
+summary(m_pcb)
 ```
 
 ```{r selectinteractions}
 # Estella's work 4 
 # setting threshold of pvalue to be 0.05 and assess possible interaction terms
-pvalues <- summary(m)$coefficients[,4]
+pvalues <- summary(m_pcb)$coefficients[,4]
 p_threshold = 0.05
-selected <-which(pvalues<= p_threshold)
+selected <- which(pvalues <= p_threshold)
 names(selected)
 ```
+
+```{r dioxin_interactions}
+f_dioxin <- as.formula(
+  (paste("length", paste("(", paste(POP_dioxin, collapse = " + "), ")^2"), sep = " ~")))
+m_dioxin <- lm(f_dioxin, data = pollutants)
+summary(m_dioxin)
+```
+
+```{r furan_interactions}
+# interaction in furan
+f_furan <- as.formula(
+  (paste("length", paste("(", paste(POP_furan, collapse = " + "), ")^2"), sep = " ~")))
+
+m_furan <- lm(f_furan, data = pollutants)
+summary(m_furan)
+```
+We observe no interaction should be included for Pop_furan and Popl_dioxin, and we only need to those interactions in POP_PCB:
+"POP_PCB2:POP_PCB6"   "POP_PCB2:POP_PCB7"   "POP_PCB2:POP_PCB8"   "POP_PCB2:POP_PCB10"  "POP_PCB3:POP_PCB7"   "POP_PCB6:POP_PCB11"  "POP_PCB7:POP_PCB8"   "POP_PCB10:POP_PCB11"
 
 ```{r buildmodel}
 #stepwise parameters selection without any interaction terms
@@ -330,6 +374,8 @@ Report on the findings of your analysis
 # 6. Discussion:
 Comment on your findings/conclusions; describe any limitations of your analysis.
 
+
+\newpage
 # 7. Appendix
 
 ## Data Summary
@@ -373,3 +419,4 @@ for (c in 20:25) {
 }
 max_WBC_idx
 ```
+
