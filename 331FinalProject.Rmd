@@ -9,29 +9,6 @@ output: pdf_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-
-# Requirement of the project 
-Your 7–10 page report must contain the following components: 
-
-- 1. Summary:
-A maximum of 200 words describing the objective of the report, an overview of the statistical analysis, and summary of the main results.
-
-- 2. Objective:
-Describe your goals for the analysis.
-
-- 3. Exploratory Data Analysis:
-Conduct exploratory data analyses: report summary statistics, visualize data (histograms, scatter plots, etc.). Report on any interesting findings and comment on how these inform the rest of your analysis.
-
-- 4. Methods:
-Describe your statistical analysis: What is your model? Did you use any transformations or extensions of the basic multiple linear regression model? How did you select a model? Does the model fit the data well? Are the necessary assumptions met? Be sure to explain and justify your decisions.
-
-- 5. Results:
-Report on the findings of your analysis
-
-- 6. Discussion:
-Comment on your findings/conclusions; describe any limitations of your analysis.
-
-
 # 1. Summary
 A maximum of 200 words describing the objective of the report, an overview of the statistical analysis, and summary of the main results.
 
@@ -44,8 +21,7 @@ Conduct exploratory data analyses: report summary statistics, visualize data (hi
 
 can use this as a tutorial https://r4ds.had.co.nz/exploratory-data-analysis.html
 
-
-Take a peak at the first 5 entries
+Import dataset
 ```{r dataset}
 # CHANGE ABSOLUTE PATH
 
@@ -90,16 +66,15 @@ pollutants$edu_cat = edu_factor
 pollutants$race_cat = race_factor
 pollutants$smokenow = smoke_factor
 pollutants$male = gender_factor
-
-head(pollutants)
-summary(pollutants)
 ```
 
-## Get the names of Covariates
+Get the names of covariates after we have performed some cleaning on the data
 ```{r covariatenames}
 names(pollutants)
 ```
 
+## Data Distribution
+We investigate the distribution of covariates from the supplied data.
 
 ```{r histograms}
 # Mxn's work
@@ -123,31 +98,71 @@ plot(gender_factor,
      xlab="Gender Count")
 ```
 
-We see that we generally have more non-smokers than smokers and more white people than other race. The distribution of gender and education are relatively close.
-
+We see that we have more data about non-smokers than smokers and white people than other races. There are more entries for lower-education than higher, and more female than male.However, the distribution of gender and education are relatively close.
 
 ```{r boxplots}
 # Mxn's work
+# PCB 1-6
+par(mfrow=c(2,6))
+boxplot(pollutants[, 2], xlab="PCB 1")
+boxplot(pollutants[, 3], xlab="PCB 2")
+boxplot(pollutants[, 4], xlab="PCB 3")
+boxplot(pollutants[, 5], xlab="PCB 4")
+boxplot(pollutants[, 6], xlab="PCB 5")
+boxplot(pollutants[, 7], xlab="PCB 6")
+boxplot(pollutants[, 8], xlab="PCB 7")
+boxplot(pollutants[, 9], xlab="PCB 8")
+boxplot(pollutants[, 10], xlab="PCB 9")
+boxplot(pollutants[, 11], xlab="PCB 10")
+boxplot(pollutants[, 12], xlab="PCB 11")
 
-# PC 1-6
-boxplot(pollutants[, 3:8])
-
-# PC 7-11
-boxplot(pollutants[, 9:13])
-
-# Doxin
-boxplot(pollutants[, 14:16])
-
+# Dioxin
+par(mfrow=c(2,4))
+boxplot(pollutants[, 16], xlab="Furan 1")
+boxplot(pollutants[, 17], xlab="Furan 2")
+boxplot(pollutants[, 18], xlab="Furan 3")
+boxplot(pollutants[, 19], xlab="Furan 4")
 # Furan
-boxplot(pollutants[, 17:20])
+boxplot(pollutants[, 13], xlab="Dioxin 1")
+boxplot(pollutants[, 14], xlab="Dioxin 2")
+boxplot(pollutants[, 15], xlab="Dioxin 3")
+
+# white blood cells and concentrations
+par(mfrow=c(2,6))
+boxplot(pollutants[, 20], xlab="WBC Cnt")
+boxplot(pollutants[, 21], xlab="lymph %")
+boxplot(pollutants[, 22], xlab="mono %")
+boxplot(pollutants[, 23], xlab="eosin %")
+boxplot(pollutants[, 24], xlab="baso %")
+boxplot(pollutants[, 25], xlab="neutro %")
+# others
+boxplot(pollutants[, 26], xlab="BMI")
+boxplot(pollutants[, 30], xlab="Age")
+boxplot(pollutants[, 31], xlab="Smoke Yrs")
+boxplot(pollutants[, 33], xlab="Log cotinine")
 ```
 
-We see that there are some extreme outliers in some of the covariates, however note that the maximum PCB values mostly came from one observation 
+
+We see that there are some extreme outliers in some concentration of PCBs, Dioxins, and Furan. The maximum values are sometimes over double the magnitude of the second largest. 
+
+However with a little investigation in \@ref(#outlier-entries), we see that outliers for PCB values mostly came from one observation.
+
 ```{r outlier}
 pollutants[436, 3:12]
 ```
 
+Similarly, the most extreme outliers for different types of Dioxin and Furan also came from the same entry of data:
 
+* Entry 285 contain the highest value for Dioxin 1 and 3, which are extreme outliers as we can see from the boxplots
+
+* Entry 559 contain the highest value for Furan 2 and 4, where Furan 4 has an extreme outlier
+
+Other covariates do not have a common entry that contribute to the outliers.
+
+
+# Multicolinearity
+
+## Correlation among PCB Concentrations
 ```{r pcbcorrelations}
 # Estella's work 1
 library(corrplot)
@@ -156,7 +171,6 @@ library(ggplot2)
 POP_PCB = c("POP_PCB1", "POP_PCB2","POP_PCB3", "POP_PCB4", 
             "POP_PCB5", "POP_PCB6","POP_PCB7", "POP_PCB8",
             "POP_PCB9", "POP_PCB10", "POP_PCB11")
-
 POP_PCB_data <- pollutants [, POP_PCB]
 cc = cor(POP_PCB_data , method = "spearman")
 
@@ -167,6 +181,15 @@ corrplot(cc, tl.col = "black", order = "hclust", hclust.method = "average",
          addrect = 4, tl.cex = 0.7)
 ```
 
+## Correlation among PCB Concentrations
+
+# 4. Methods:
+Describe your statistical analysis: What is your model? Did you use any transformations or extensions of the basic multiple linear regression model? How did you select a model? Does the model fit the data well? Are the necessary assumptions met? Be sure to explain and justify your decisions.
+
+```{r splitdata}
+train_data <- pollutants[1:600,]
+test_data <- pollutants[601:nrow(pollutants),]
+```
 
 ```{r linearity}
 # Judy's work Part 1
@@ -223,14 +246,6 @@ pvalues <- summary(m)$coefficients[,4]
 p_threshold = 0.05
 selected <-which(pvalues<= p_threshold)
 names(selected)
-```
-
-# 4. Methods:
-Describe your statistical analysis: What is your model? Did you use any transformations or extensions of the basic multiple linear regression model? How did you select a model? Does the model fit the data well? Are the necessary assumptions met? Be sure to explain and justify your decisions.
-
-```{r splitdata}
-train_data <- pollutants[1:600,]
-test_data <- pollutants[601:nrow(pollutants),]
 ```
 
 ```{r buildmodel}
@@ -308,3 +323,53 @@ mean((test_data$length - predBIC)^2)
 mean((test_data$length - predAICInteraction)^2)
 mean((test_data$length - predBICInteraction)^2)
 ``` 
+
+# 5. Results:
+Report on the findings of your analysis
+
+# 6. Discussion:
+Comment on your findings/conclusions; describe any limitations of your analysis.
+
+# 7. Appendix
+
+## Data Summary
+Looking at the useful metrics for the data
+```{r datasummary}
+summary(pollutants)
+```
+
+## Outlier Entries
+Here we will find entries where outliers for different covariate occurred.
+```{r findPCBoutlier}
+pollutant_mat = data.matrix(pollutants, rownames.force = NA)
+
+max_PCB_idx = c()
+for (c in 2:12) {
+  max_PCB_idx[c-1] = which.max(pollutant_mat[, c])
+}
+max_PCB_idx
+```
+
+```{r findDioxinoutlier}
+max_dioxin_idx = c()
+for (c in 13:15) {
+  max_dioxin_idx[c-12] = which.max(pollutant_mat[, c])
+}
+max_dioxin_idx
+```
+
+```{r findFuranoutlier}
+max_furan_idx = c()
+for (c in 16:19) {
+  max_furan_idx[c-15] = which.max(pollutant_mat[, c])
+}
+max_furan_idx
+```
+
+```{r finfWBCoutlier}
+max_WBC_idx = c()
+for (c in 20:25) {
+  max_WBC_idx[c-19] = which.max(pollutant_mat[, c])
+}
+max_WBC_idx
+```
