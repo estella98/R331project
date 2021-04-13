@@ -2,6 +2,8 @@
 title: "STAT 331 Final Project"
 author: "Maxine, Estella, Judy, Weiwei"
 date: "04/12/2021"
+header-includes:
+  - \DeclareUnicodeCharacter{FF0C}{$\bullet$}
 output: pdf_document
 ---
 
@@ -255,6 +257,7 @@ f_furan <- as.formula(
 m_furan <- lm(f_furan, data = pollutants)
 summary(m_furan)
 ```
+ 
  We observe no interaction should be included for Pop_furan and Popl_dioxin，and we only need to those interactions in POP_PCB:
 "POP_PCB2:POP_PCB6"   "POP_PCB2:POP_PCB7"   "POP_PCB2:POP_PCB8"   "POP_PCB2:POP_PCB10"  "POP_PCB3:POP_PCB7"  
 "POP_PCB6:POP_PCB11"  "POP_PCB7:POP_PCB8"   "POP_PCB10:POP_PCB11"
