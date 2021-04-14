@@ -176,7 +176,12 @@ From the graph above, we see that there is no strong positive correlation among 
 
 We shall omit the analysis on correlations between other covariate from this section as we do not expect personal health data such as BMI or years of smoke to have a logical significant correlation with each other, white blood cell data, or exposure to pollutants.
 
-To further investigate how these listed correlations affect the observed data, we shall consider adding interaction terms to our model, and performed p-test to check their statistical significance.
+To further investigate how these listed correlations affect the observed data, we may use variance inflation factor (VIF), which we would further discuss in Methods sections.
+
+### Possible Interactions among Persistent Pollution and White Blood Cells
+
+Associations between different covariates might affect their relationships with the outcomes. Therefore, it is also necessary to explore the possibility of adding interaction terms. In our data analysis, we are interested in whether the relationship between mean leukocyte telomere length and the white blood cells are influenced by the concentration of persistent pollution; To test our hypothesis, we performed a p-test and check their statistical significance. More details are discussed under the Methods section.
+
 
 
 # Methods
