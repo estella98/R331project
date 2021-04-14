@@ -572,3 +572,4 @@ summary(MBIC_Interaction)
 summary(MAIC_reduced)
 summary(MBIC_reduced)
 ```
+
