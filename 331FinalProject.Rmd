@@ -82,7 +82,7 @@ names(pollutants)
 ```
 Note that "edu_cat", "race_cat", "male", "smokenow" are categorical values and the rest are continuous. 
 
-## Data Distribution
+## Data Distribution \label{datadistribution}
 We shall now investigate the distribution of covariates from the supplied data.
 
 From the output of summary statistics on the covariates (see in appendix \ref{datasummary}), we observed that all values are non-negative and there are more observations with values close to 0 than values with large magnitude across all covariates.
@@ -179,26 +179,20 @@ We shall omit the analysis on correlations between other covariate from this sec
 To further investigate how these listed correlations affect the observed data, we may use variance inflation factor (VIF), which we would further discuss in Methods sections.
 
 ### Possible Interactions among Persistent Pollution and White Blood Cells
-
 Associations between different covariates might affect their relationships with the outcomes. Therefore, it is also necessary to explore the possibility of adding interaction terms. In our data analysis, we are interested in whether the relationship between mean leukocyte telomere length and the white blood cells are influenced by the concentration of persistent pollution; To test our hypothesis, we performed a p-test and check their statistical significance. More details are discussed under the Methods section.
-
 
 
 # Methods
 Describe your statistical analysis: What is your model? Did you use any transformations or extensions of the basic multiple linear regression model? How did you select a model? Does the model fit the data well? Are the necessary assumptions met? Be sure to explain and justify your decisions.
 
 ## Linear Model Assumptions
-Since we have no access to data collection, we shall proceed by assuming that the independence assumption is satisfied.
-
-As for the normality assumption, as the given dataset is relatively large, we may assume the data is approximately Normally distributed due to the Central Limit Theorem.
+Since we have no access to data collection process, we shall proceed by assuming that the independence assumption is satisfied. As for the normality assumption, as the given dataset is relatively large, we may assume the data is approximately Normally distributed due to the Central Limit Theorem.
 
 Now to assess whether any covariate has a nonlinearity relationship with the outcome in the multiple linear regression model, we used added-variable plots(avPlot), as shown in appendix \ref{AvPlots}. The plots isolate the relationship between the outcome and each of the covariates after adjusting for the other covariate. If the plot of the outcome versus a covariate x has a nonlinear shape, it may indicate a regression model with a higher power of this variable, for example, $x^2$. With the given data, we see from the avPlots that all plots have a linear shape, thus the outcome is expected to have a linear relationship with all of the covariates. Therefore, the models constructed in this report do not consider non-linear terms.
 
-## Heteroskedasticity
-We also need to verify the equal variance(heteroscedasticity) assumption. As shown in the appendix \ref{Residuals vs Fitted plot}, if there are evident patterns in the residuals, we might not be able to simply trust the results. Fortunately, we can see that the random residuals are uncorrelated and uniform.
+Finally, we also need to verify the equal variance (homoscedasticity) assumption. As shown in the appendix \ref{Residuals vs Fitted plot}, if there are evident patterns in the residuals, we might not be able to simply trust the results. Fortunately, we can see that the random residuals are uncorrelated and uniform.
 
 ## Finding the model
-
 We shall first split the data into training and testing set to ensure the final model is well-generalized without problems such as overfitting or underfitting.
 
 ```{r splitdata}
@@ -209,7 +203,6 @@ test_data <- pollutants[-train_idx, ]
 ```
 
 ### Investigate Interactions
-
 As we have seen in the EDA section, we would like to investigate interactions among pollutants as well as white blood cell-related data. By building a large linear model and filtering the interactions with p values $\leq 0.05$, we have selected the following potential interaction terms that we may consider in the model building process:
 
 ```{r chemwbcinteractions, echo=FALSE}
@@ -271,21 +264,22 @@ BIC_MSPE <- mean((test_data$length - predBICInteraction)^2)
 
 ```{r printtestinteractionmodels}
 
-MAIC_Interaction #model 1
+MAIC_Interaction
 AIC_MSPE
 
 MBIC_Interaction
 BIC_MSPE
 ``` 
 
-This result shows that the model selected by BIC was preferred as it has a lower MSPE, very generalized, and easy to interpret. At the same time, note that the model chosen by AIC has more parameters but a lower prediction score, this implies that the added parameters added too much variability to the model and seems to have overfitted the training data. Therefore, we decided to use the parameters picked by BIC for our first candidate model, named model 1. The formula of model 1 is:
+This result shows that the model selected by BIC is preferred as it has a lower MSPE, is more generalized, and easier to interpret. At the same time, note that the model chosen by AIC has more parameters but a lower prediction score, this implies that the added parameters added too much variability to the model and seems to have overfitted the training data. 
 
+We decided to name the model selected by BIC here as our first candidate model (Model 1), which has the formula:
 ```{r print model 1 formula}
-model1_f <- formula(MBIC_Interaction)
-model1_f 
+model1_f <-  formula(MBIC_Interaction)
+model1_f
 ``` 
 
-Furthermore, as we had included only one interaction term in the AIC model and it did not improve the performance of the model. We decided that none of the interaction terms contribute significantly to the outcome of interest (telomere length). In the next part of the analysis, we have removed these terms for simplicity.  
+Furthermore, as we had only selected one interaction term in the AIC model and it did not improve the performance of the model. We decided that none of the interaction terms contribute significantly to the outcome of interest (telomere length). In the next part of the analysis, we have removed these terms for simplicity.  
 
 ### Reduce Multicolinearity
 An additional technique we may use to reduce the impact of multicollinearity on our model is checking variance inflation factor (VIF). As interaction terms were eliminated, we shall regress on all non-categorical covariates and identify those with the largest VIF one at a time until there were no more with 'high' multicollinearity. We used a VIF (Variance Inflation Factor) > 10 as an indicator of "high" multicollinearity (general practice). And after the covariate eliminations, The explanatory variables that remained from the selection are:
@@ -320,8 +314,6 @@ while (TRUE){
 }
 ```
 
-
-
 ```{r printvifreductionresult}
 VIFselected
 ``` 
@@ -349,7 +341,6 @@ MBIC_reduced <- step(object = Mfull,
                      direction = "both", trace = 0, 
                      k = log(nrow(train_data)))
 ``` 
-
 ```{r testreducedmodels, echo = FALSE}
 predAICReduced <- predict(MAIC_reduced, newdata=test_data)
 predBICReduced <- predict(MBIC_reduced, newdata=test_data)
@@ -361,59 +352,132 @@ BIC_MSPE <- mean((test_data$length - predBICReduced)^2)
 MAIC_reduced
 AIC_MSPE
 
-MBIC_reduced
+MBIC_reduced # model 1
 BIC_MSPE
 ``` 
 
-We got a similar result that the model selected by BIC still outperformed the one selected by AIC. However, this time the stepwise function which ran on the reduced model with BIC had selected different covariates for us. We could build another model, model 2 upon those newly selected covariates.
-The formula of model 2 is:
+We observe that the model selected by AIC is smaller compared to the previous section. The smaller model yields a better MSPE score which further confirms that the previous model selected by AIC has overfitted the training data.
+The model selected by BIC is still smaller than the one with AIC, and it also outperforms it. This model is different from Model 1 but as interpretable. Therefore, we decided to use the BIC model as our second candidate model, named Model 2. The formula of Model 2 is:
+
+The formula of model 1 is:
 ```{r print model 2 formula}
 model2_f <-  formula(MBIC_reduced)
 model2_f
 ``` 
 
-### Model via Cross-Validation with Ridge
-In order to get accurate prediction evaluations for our models (model 1&2), we used the idea of 80% and 20% train-test split; To ensure the entire training set was covered and each observation was well represented, we divided the training data into 10 folds and repeatedly cross-validated the MSPE. Besides, we performed shrinkage methods like lasso and ridge to solve the overfitting problem. For example, we used ridge with cross validation to update our Model 1&2 as follow: 
+### Model Selection via Forward-Backward Selection without Outliers
+Recall that when we were performing EDA in section \ref{datadistribution}, we have identified 3 entries that contribute to the extreme outliers in the pollutant exposure values, which were entry with index 436,285,and 559. In this section we shall remove these outliers and observe its effect on the model selection process.
 
+```{r removeoutliers, echo = FALSE}
+set.seed(23)
+outliers <- c(436,285,559)
+pollutants_no <- pollutants[-outliers,]
+train_idx_no <- sample(nrow(pollutants_no), 650, replace = FALSE, prob = NULL)
+train_data_no<- pollutants_no[train_idx_no,]
+test_data_no <-pollutants_no[-train_idx_no, ]
+```
+```{r stepwisenooutliermodel, echo = FALSE}
+# stepwise parameters selection with interaction terms
+M0 <- lm(length ~ 1, data = train_data_no) # minimal model
 
-```{r ridgeBICcv}
+f_interaction <- as.formula(
+  paste("length", paste(VIFselected, collapse = " + "), sep = " ~"))
+Mfull <- lm(f_interaction, data = train_data_no)
+Mstart <- lm(f_interaction, data = train_data_no)
+
+MAIC_no <- step(object = Mfull,
+                     scope = list(lower = M0, upper = Mfull),
+                     direction = "both", trace = 0, k = 2)
+
+#stepwiseBIC
+MBIC_no <- step(object = Mfull,
+                     scope = list(lower = M0, upper = Mfull),
+                     direction = "both", trace = 0, 
+                     k = log(nrow(train_data_no)))
+``` 
+```{r testnooutliermodels, echo = FALSE}
+predAICNoOutlier <- predict(MAIC_no, newdata=test_data_no)
+predBICNoOutlier <- predict(MBIC_no, newdata=test_data_no)
+AIC_MSPE <- mean((test_data_no$length - predAICNoOutlier)^2)
+BIC_MSPE <- mean((test_data_no$length - predBICNoOutlier)^2)
+``` 
+
+```{r printnooutliertestmodels}
+MAIC_no
+AIC_MSPE
+
+MBIC_no
+BIC_MSPE
+``` 
+
+We observe that without the outliers identified in the EDA section, stepwise algorithm selected the a smaller model with AIC and the same model as Model 2 with BIC. Since the model selected with AIC has a good prediction score and is interpretable, we shall consider this as another candidate model, called Model 3, which has the formula:
+
+```{r print model 3 formula}
+model3_f <-  formula(MAIC_no)
+model3_f
+``` 
+
+### Model Tuning via Cross-Validation with Ridge
+In order to get accurate prediction evaluations for our models, we used the idea of 75% and 25% train-test split; to ensure the entire training set was covered and each observation was well represented, we divided the training data into 10 folds and repeatedly cross-validated the MSPE.
+
+Besides, we performed shrinkage methods like LASSO and ridge to solve the overfitting problem. For example, we used ridge with cross validation to tune our Model 1, 2, and 3: 
+
+```{r ridgeBICcv, echo = FALSE}
 # estella's work cross validation using ridge on BIC model
-
 library(glmnet)
+
 ## model 1
 Y <-  train_data[, c("length")] 
-train_model1_X <-  model.matrix(lm(model1_f, data= train_data))
-test_model1_X <- model.matrix(lm(model1_f, data= test_data))
+train_model1_X <-  model.matrix(lm(model1_f, data=train_data))
+test_model1_X <- model.matrix(lm(model1_f, data=test_data))
 
  # use ridge, default 10 folds
 cv_ridge_model1 <- cv.glmnet(x = data.matrix(train_model1_X), y = Y, alpha = 0)
 
-paste("model 1")
-# estimated betas for min lambda
-coef(cv_ridge_model1, s = "lambda.min")
-pred_model1 <- predict(cv_ridge_model1, newx = data.matrix(test_model1_X ), s = "lambda.min")
-
 ## model 2
-
 Y <-  train_data[, c("length")] 
-train_model2_X <-  model.matrix(lm(model2_f, data= train_data))
-test_model2_X <- model.matrix(lm(model2_f, data= test_data))
+train_model2_X <-  model.matrix(lm(model2_f, data=train_data))
+test_model2_X <- model.matrix(lm(model2_f, data=test_data))
 
  # use ridge, default 10 folds
 cv_ridge_model2 <- cv.glmnet(x = data.matrix(train_model2_X), y = Y, alpha = 0)
 
-paste("model 2")
-# estimated betas for min lambda
-coef(cv_ridge_model2, s = "lambda.min")
-pred_model2 <- predict(cv_ridge_model2, newx = data.matrix(test_model2_X ), s = "lambda.min")
+## model 3
+Y <-  train_data[, c("length")] 
+train_model3_X <-  model.matrix(lm(model3_f, data=train_data))
+test_model3_X <- model.matrix(lm(model3_f, data=test_data))
 
+ # use ridge, default 10 folds
+cv_ridge_model3 <- cv.glmnet(x = data.matrix(train_model3_X), y = Y, alpha = 0)
 ```
+```{r testridgemodels, echo = FALSE}
+pred_model1 <- predict(cv_ridge_model1, newx = data.matrix(test_model1_X ), s = "lambda.min")
+Ridge_MSPE1 <- mean((test_data$length - pred_model1)^2)
 
-With the consideration that lasso could also do parameter selections, we examined sending the remaining covariates in the VIF reduced model alongwith the categorical covariates to ‘glmnet’ function and let it pick the best model for us. We named it model 3.
+pred_model2 <- predict(cv_ridge_model2, newx = data.matrix(test_model2_X ), s = "lambda.min")
+Ridge_MSPE2 <- mean((test_data$length - pred_model2)^2)
 
-### Model via Cross-Validation with LASSO
+pred_model3 <- predict(cv_ridge_model3, newx = data.matrix(test_model3_X ), s = "lambda.min")
+Ridge_MSPE3 <- mean((test_data$length - pred_model3)^2)
+``` 
 
-```{r lasso cv}
+```{r printridgetestmodels}
+model1_f
+Ridge_MSPE1
+
+model2_f
+Ridge_MSPE2
+
+model3_f
+Ridge_MSPE3
+``` 
+
+
+### Model Selection via Cross-Validation with LASSO
+
+With the consideration that lasso could also do parameter selections, we examined sending the remaining covariates in the VIF reduced model alongwith the categorical covariates to ‘glmnet’ function and let it pick the best model for us. We named it model 2.
+
+```{r lassocv, echo = FALSE}
 ## estella's work cross validation using lasso to do model selections on reduced model selected by VIF
 ## model 3
 # Load libraries
@@ -427,26 +491,34 @@ test_oh <- one_hot(test_df )
 
 # try lasso and let lasso do the parameters selection
 cvfit_lasso_oh <- cv.glmnet(x = data.matrix(train_oh), y = Y, alpha = 1) # use lasso
-coef(cvfit_lasso_oh, s = "lambda.min")
-pred_lasso <- predict(cvfit_lasso_oh, newx = data.matrix(test_oh ), s = "lambda.min")
-
 ```
 
+
+```{r testlassomodels, echo = FALSE}
+pred_lasso <- predict(cvfit_lasso_oh, newx = data.matrix(test_oh ), s = "lambda.min")
+lasso_MSPE <- mean((test_data$length - pred_lasso)^2)
+
+# get lasso formula
+pred_lasso <-  predict(cvfit_lasso_oh, type = "coefficients", s = "lambda.min")
+covariates_selected_lasso <- tail(names(which(as.matrix(pred_lasso)[,1] != 0)),-1)
+f_lasso <- as.formula(
+  paste("length", paste(covariates_selected_lasso, collapse = " + "), sep = " ~"))
+``` 
+
+```{r printlassotestmodels}
+f_lasso
+lasso_MSPE
+``` 
 
 # Results
 Report on the findings of your analysis
 
 In the end, we looked at the model performance on the remaining test set and computed the MPSE of each model.
 ```{r model prediction mse }
-#model 1
-model1_f
-mean((test_data$length - pred_model1)^2)
-#model 2
-model2_f
-mean((test_data$length - pred_model2 )^2)
-#model 3
-paste("lasso selected model:")
-mean((test_data$length - pred_lasso)^2)
+Ridge_MSPE1
+Ridge_MSPE2
+Ridge_MSPE3
+lasso_MSPE
 ```
 
 Comparing the MSE of the three different candidates we found earlier, model2 with the formula f = length ~ POP_furan3 + ageyrs has the best performance. As mentioned earlier, this model is also generalized, easy to interpret, and unlikely to get overfitted. We can now answer the question asked in our objective, that the age of the person, and the concentration of foran 3 contribute greatly to the average leukocyte telomere length in a person.
@@ -459,7 +531,6 @@ Comment on your findings/conclusions; describe any limitations of your analysis.
 We have considered the multicollinearity and interactions within the eleven PCB covariates and similarly for the three dioxin covariates and four furan covariates. However, the multicollinearity and interactions between these eighteen exposure covariates and other covariates are not considered. It is expected that there does not exist any causal relationship between exposure covariates and other covariates since the former relates to the surrounding environment and the latter relates to personal characteristics. For example, it’s believed that the concentration of POP_PCB10 is unrelated to the value of ageyrs and BMI.
  
 Besides, a linear regression model has four assumptions, namely linearity, normality, heteroskedasticity and independence. We have analyzed and confirmed that the first three assumptions hold. Generally, we can make the assumption of independence when constructing the model. To further confirm the assumption, time-series data and a closer look at the data collection process will be helpful.
-
 
 
 
