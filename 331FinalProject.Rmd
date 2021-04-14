@@ -132,7 +132,7 @@ Other covariates, as we see from the boxplots, do not have outliers that are as 
 
 
 ## Multicolinearity
-We learned that severe multicollinearity between covariates could result in unstable and sensitive coefficient estimates. Therefore, in this section, we will investigate correlations among values that we may expect multicollinearity to appear, such as between different types of organic pollutants POP_PCB1--11, POP_dioxin1-3, Pop_furan1--4, as well as white blood cell components.
+We learned that severe multicollinearity between covariates could result in unstable coefficient estimates and inflated standard errors. Therefore, in this section, we will investigate correlations among values that we may expect multicollinearity to appear, such as between different types of organic pollutants POP_PCB1--11, POP_dioxin1-3, Pop_furan1--4, as well as white blood cell components.
 
 To obtain the heatmaps that visualize correlations among covariates, we first computed Spearman correlations for each pair of covariates of interest and represented the measured values through gradients of a color scheme. In our example, blue refers to positive correlations and red, negative. Furthermore, the darker colours signify a higher correlation among the covariates. Finally, we clustered variables with higher correlations together such that the covariates within the same rectangles are highly correlated such that they may have dependencies on each other. 
 
@@ -221,7 +221,7 @@ f_interaction <- as.formula(
   paste("length", paste("(", single,"+", interaction, ")"), sep = " ~"))
 
 Mfull <- lm(f_interaction, data = train_data)
-Mstart <- lm(f_interaction, data = train_data)
+Mstart <- lm(length ~ ., data = train_data) 
 
 # stepwise AIC
 Mstart <- lm(length ~ ., data= train_data)
@@ -243,10 +243,6 @@ system.time({
 MAIC_Interaction
 MBIC_Interaction
 ```
-```{r testmodels}
-covariates_AIC <- names(MAIC_Interaction$coefficients[2:length(MAIC_Interaction$coefficients)])
-covariates_BIC <- names(MBIC_Interaction$coefficients[2:length(MBIC_Interaction$coefficients)])
-```
 
 ```{r testmodels}
 # mxn's work
@@ -259,16 +255,98 @@ mean((test_data$length - predAICInteraction)^2)
 mean((test_data$length - predBICInteraction)^2)
 ``` 
 This showed that the model selected by BIC was prefered. it gave us a lower MSE and it was also simple enough to interpret. At the same time, through
-the comparisons, we concluded that the interaction terms we filtered out earlier were unnecessary in our model.
+the comparisons, we concluded that the interaction terms we filtered out earlier were unnecessary in our model. In the end, one additional technique we used to reduce the influence of multicollinearity is variance inflation factor(VIF). As interaction terms were analyzed to be ignorable, it was sufficient to regress on all non-categorical covariates and excluded the coviariate with the largest VIF one at a time until there were no more with 'high' multicollinearity. We decided to consider a VIF (Variance Inflation Factor) > 10 as an indicator of "high" multicollinearity. And after the covariate eliminations, the reduced covariates looked like: 
+ 
+```{r vif eval = FALSE}
+# est's work
+library(car)
+current_m <- lm(length ~ . -edu_cat - race_cat - smokenow - male ,data = train_data)
+threshold <- 10
+covariates <- colnames(train_data)
+covariates <- covariates[!(covariates == "length")]
+VIFselected<- covariates
+#print(VIFselected)
+while (TRUE){
+# VIFS <- car::vif(current_m)
+VIFS <- as.numeric(vif(current_m))
+# summary(current_m)
+max_VIF <- max(VIFS)
+max_idx <- which.max(VIFS)
+if (max_VIF > threshold){
+  #update selected
+  #cat("remove", VIFselected[max_idx], "\n")
+  VIFselected <- VIFselected[-max_idx]
+  # update the new model
+  f <- as.formula((paste("length", paste(VIFselected, collapse = " + "), sep = " ~")))
+  #print(f) # print out the current selected model
+  # build the full model starting with all the covariates selcted
+  current_m<- lm(f, data = train_data)
+}
+else{
+  #stop the loop
+  #print("stop")
+  break
+}
+}
+```
+```{r vif}
+print("the left explanatory variables are:\n")
+VIFselected
+# length(VIFselected)
+``` 
+To validate our parameter selection steps, we could run stepwise selection again on the reduced model.
+
+```{r stepwise on reduced model}
+# stepwise parameters selection with any interaction terms
+M0 <- lm(length ~ 1, data = train_data) # minimal model
 
 
-```{r}
+f_interaction <- as.formula(
+  paste("length", paste(VIFselected, collapse = " + "), sep = " ~"))
+f_interaction 
+Mfull <- lm(f_interaction, data = train_data)
+Mstart <- lm(f_interaction, data = train_data)
+
+
+system.time({
+  MAIC_Interaction <- step(object = Mfull,
+                           scope = list(lower = M0, upper = Mfull),
+                           direction = "both", trace = 0, k = 2)
+})
+
+#stepwiseBIC
+system.time({
+  MBIC_Interaction <- step(object = Mfull,
+                           scope = list(lower = M0, upper = Mfull),
+                           direction = "both", trace = 0, 
+                           k = log(nrow(train_data)))
+})
+
+MAIC_Interaction
+MBIC_Interaction
+``` 
+```{r testmodels}
+# mxn's work
+
+predAICInteraction <- predict(MAIC_Interaction, newdata=test_data)
+predBICInteraction <- predict(MBIC_Interaction, newdata=test_data)
+
+
+mean((test_data$length - predAICInteraction)^2)
+mean((test_data$length - predBICInteraction)^2)
+``` 
+As we see, we get the same result that the model selected by BIC still outperformed the one selected by AIC. Therefore this model is our first candidate model I. We also built another model using the automatic parameter selections of Lasso, which we would discuss later.
+
+
+In order to get accurate prediction evaluations for our models, we used the idea of 80% and 20% train-test split; To ensure the entire training set is covered and each observation is well represented, we divided the training data into 10 folds and repeatedly cross-validated the MSPE. Besides, we performed shrinkage methods like lasso and ridge to solve the overfitting problem. For example, we used ridge with cross validation to update our Model I as follow: 
+
+```{r ridgeBIC cv }
 # estella's work cross validation using ridge on BIC model
 ## model 1
 library(glmnet)
 Y <-  train_data[, c("length")] 
-BIC_train_X <-  train_data[, covariates_BIC] # Features selected by BIC 
-BIC_test_X <-  test_data[, covariates_BIC] 
+BIC_train_X <-  train_data[, c( "ageyrs", "POP_furan3")] # Features selected by BIC 
+BIC_test_X <-  test_data[, c( "ageyrs", "POP_furan3")] 
  # use ridge, default 10 folds
 cvfit_ridge <- cv.glmnet(x = data.matrix(BIC_train_X ), y = Y, alpha = 0)
 
@@ -276,31 +354,41 @@ cvfit_ridge <- cv.glmnet(x = data.matrix(BIC_train_X ), y = Y, alpha = 0)
 #estimated betas for min lambda
 coef(cvfit_ridge, s = "lambda.min")
 pred_ridge_BIC <- predict(cvfit_ridge, newx = data.matrix(BIC_test_X), s = "lambda.min")
-mean((test_data$length - pred_ridge_BIC)^2)
 
 ```
-```{r}
-## estella's work cross validation using lasso to do model selections
+With the consideration that lasso could also do parameter selections, we examined sending the remaining covariates in the VIF reduced model alongwith the categorical covariates to ‘glmnet’ function and let it pick the best model for us. 
+
+
+```{r lasso cv }
+## estella's work cross validation using lasso to do model selections on reduced model selected by VIF
 ## model 2
 # Load libraries
 library(data.table)
 library(mltools)
-train_df <- as.data.table(train_data)
+train_df <- as.data.table(train_data[c(VIFselected,"edu_cat", "race_cat", "smokenow", "male")])
 train_oh <- one_hot(train_df )
-test_df <- as.data.table(test_data)
+test_df <- as.data.table(test_data[c(VIFselected,"edu_cat", "race_cat", "smokenow", "male")])
 test_oh <- one_hot(test_df )
 
 # try lasso and let lasso do the parameters selection
-all_train_oh_X <- train_oh[, -1] # remove y 
-all_test_oh_X <- test_oh[, -1] # remove y 
-cvfit_lasso_oh <- cv.glmnet(x = data.matrix(all_train_oh_X), y = Y, alpha = 1) # use lasso
+cvfit_lasso_oh <- cv.glmnet(x = data.matrix(train_oh), y = Y, alpha = 1) # use lasso
 coef(cvfit_lasso_oh, s = "lambda.min")
-pred_lasso_all <- predict(cvfit_lasso_oh, newx = data.matrix(all_test_oh_X), s = "lambda.min")
-mean((test_oh$length - pred_lasso_all)^2)
+pred_lasso <- predict(cvfit_lasso_oh, newx = data.matrix(test_oh ), s = "lambda.min")
+mean((test_data$length - pred_lasso)^2)
 ```
+
 
 # Results
 Report on the findings of your analysis
+
+In the end, we looked at the model performance on the remaining test set and computed the MPSE of each model.
+```{r model prediction mse }
+#model 1
+mean((test_data$length - pred_ridge_BIC)^2)
+#model 2
+mean((test_data$length - pred_lasso)^2)
+
+```
 
 # Discussion
 Comment on your findings/conclusions; describe any limitations of your analysis.
