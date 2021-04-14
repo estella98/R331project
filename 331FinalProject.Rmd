@@ -4,65 +4,44 @@ author: "Maxine, Estella, Judy, Weiwei"
 date: "04/12/2021"
 header-includes:
   - \DeclareUnicodeCharacter{FF0C}{$\bullet$}
-output: pdf_document
+link-citations: yes
+linkcolor: blue
+output:
+  pdf_document:
+    number_sections: yes
+    toc_depth: 1
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+\newpage
+\tableofcontents
+\newpage
 
-# Requirement of the project 
-Your 7–10 page report must contain the following components: 
 
-- 1. Summary:
+# Summary
 A maximum of 200 words describing the objective of the report, an overview of the statistical analysis, and summary of the main results.
 
-- 2. Objective:
-Describe your goals for the analysis.
-
-- 3. Exploratory Data Analysis:
-Conduct exploratory data analyses: report summary statistics, visualize data (histograms, scatter plots, etc.). Report on any interesting findings and comment on how these inform the rest of your analysis.
-
-- 4. Methods:
-Describe your statistical analysis: What is your model? Did you use any transformations or extensions of the basic multiple linear regression model? How did you select a model? Does the model fit the data well? Are the necessary assumptions met? Be sure to explain and justify your decisions.
-
-- 5. Results:
-Report on the findings of your analysis
-
-- 6. Discussion:
-Comment on your findings/conclusions; describe any limitations of your analysis.
+# Objective 
+We are looking to investigate the most influential factors that contribute to the average leukocyte telomere length in a person. We would like to especially look for human-adjustable factors such as whether a person smokes or exposure to persistent organic pollutants. 
 
 
-# 1. Summary
-A maximum of 200 words describing the objective of the report, an overview of the statistical analysis, and summary of the main results.
+# Exploratory Data Analysis
 
-# 2. Objective 
+```{r dataset, echo=FALSE}
+# import dataset
 
-The goal of this project is to analyze the pollutants.csv data and write a report on your analysis. The specific goals of your analysis are up to you to decide.
-
-# 3. Exploratory Data Analysis
-Conduct exploratory data analyses: report summary statistics, visualize data (histograms, scatter plots, etc.). Report on any interesting findings and comment on how these inform the rest of your analysis.
-
-can use this as a tutorial https://r4ds.had.co.nz/exploratory-data-analysis.html
-
-
-Take a peak at the first 5 entries
-```{r dataset}
 # CHANGE ABSOLUTE PATH
 # setwd("~/Desktop/stat341/R331project/data")
 # setwd("~/School/4A/STAT 331/R331project/data")
-# setwd("~/Desktop/R331project/data")
+setwd("~/Desktop/R331project/data")
 # setwd("C:/Users/huawei/Desktop/R331project/data")
 
 pollutants_raw <- read.csv("pollutants.csv", header = TRUE)
-head(pollutants_raw)
-
-summary(pollutants_raw)
 ```
-
-
-```{r cleandataset}
+```{r cleandataset, echo=FALSE}
 # Mxn's work
 # clean the pollutants dataframe
 pollutants <- subset(pollutants_raw , select = -X)
@@ -94,18 +73,22 @@ pollutants$edu_cat = edu_factor
 pollutants$race_cat = race_factor
 pollutants$smokenow = smoke_factor
 pollutants$male = gender_factor
-
-head(pollutants)
-summary(pollutants)
 ```
 
-## Get the names of Covariates
+The covariates of interest from the provided dataset are 
 ```{r covariatenames}
 names(pollutants)
 ```
-Note that "edu_cat", "race_cat", "male", "smokenow" are categorical data. 
+Note that "edu_cat", "race_cat", "male", "smokenow" are categorical values and the rest are continuous. 
 
-```{r histograms}
+## Data Distribution
+We shall now investigate the distribution of covariates from the supplied data.
+
+From the output of summary statistics on the covariates (see in appendix \ref{datasummary}), we observed that all values are non-negative and there are more observations with values close to 0 than values with large magnitude across all covariates.
+
+Now we shall have a closer look at the distribution of individual covariate. For categorical data, 
+
+```{r histograms, echo=FALSE, fig.align = "center", fig.dim = c(6,4.25)}
 # Mxn's work
 # put bargraphs for categorical data onto one picture
 par(mfrow=c(2,2))
@@ -126,149 +109,103 @@ plot(gender_factor,
      main="Distribution of Gender",
      xlab="Gender Count")
 ```
-```{r boxplots}
-# Mxn's work
 
-# PC 1-6
-boxplot(pollutants[, 3:8])
+We may observe from the bar graphs that there are more data about non-smokers than smokers and white people than other races. There are more entries for lower education than higher, and more female than male. However, the distribution of gender and education is relatively close.
 
-# PC 7-11
-boxplot(pollutants[, 9:13])
+Now for continuous data, we made boxplots to see the distribution of these covariates, the plots can be found in the appendix \ref{largeboxplots}. From these plots, we notice some extreme outliers in some concentration values of PCBs, Dioxins, and Furan. The maximum values are sometimes over double the magnitude of the second largest. 
 
-# Doxin
-boxplot(pollutants[, 14:16])
+However, with a little investigation in the appendix \ref{findoutliers}, we see that the extreme outliers across different types of PCB mostly came from one observation.
 
-# Furan
-boxplot(pollutants[, 17:20])
+```{r outlier}
+pollutants[436, 3:12]
 ```
 
-```{r linearity}
-# Judy's work Part 1
-# testing non-linearity in SLR
-# if for any covariate, residual vs x for M1 has a pattern and
-# residual vs x for M2 seems random, then y has a nonlinear
-# relationship with with x.
-# M1: fitting y to x
-# M2: fitting y to x^2
+This observation contributes to the maximum value for PCB1 to PCB6, as well as PCB8 and PCB9
 
-par(mfrow=c(1, 3))
-outcome <- pollutants$length
-check <- function(x) {
-  M1 <- lm(outcome ~ x)
-  print(paste("residual for M1: ", sigma(M1)))
-  M2 <- lm(outcome ~ x + I(x^2))
-  print(paste("residual for M2: ", sigma(M2)))
-  plot(x, M1$residual)
-  plot(x, M2$residual)
-  plot(x, outcome)
-}
 
-list <- list(pollutants$ageyrs, pollutants$yrssmoke,
-             pollutants$BMI, pollutants$ln_lbxcot,
-             pollutants$whitecell_count, pollutants$lymphocyte_pct, 
-             pollutants$monocyte_pct, pollutants$eosinophils_pct, 
-             pollutants$basophils_pct, pollutants$neutrophils_pct)
-for (column in list) {
-  check(column)
-}
-```
+Similarly, the most extreme outliers from Dioxin and Furan also came from the same entry of data:
 
-```{r plotlinearity}
-# Judy's work Part 2
-# testing non-linearity in MLR
-library(car)
-M <- lm (length ~ ., data=pollutants)
-avPlots(M)
-```
+* Entry 285 contain the highest value for Dioxin 1 and 3, which are the two extreme outliers as we can see from the boxplots
+* Entry 559 contain the highest value for Furan 2 and 4, where Furan 4 has an extreme outlier
 
-```{r pcbcorrelations}
+Other covariates, as we see from the boxplots, do not have outliers that are as extreme as those from pollutant data. We further observe that they do not have a common entry that contributes to the outliers.
+
+
+## Multicolinearity
+We learned that severe multicollinearity between covariates could result in unstable and sensitive coefficient estimates. Therefore, in this section, we will investigate correlations among values that we may expect multicollinearity to appear, such as between different types of organic pollutants POP_PCB1--11, POP_dioxin1-3, Pop_furan1--4, as well as white blood cell components.
+
+To obtain the heatmaps that visualize correlations among covariates, we first computed Spearman correlations for each pair of covariates of interest and represented the measured values through gradients of a color scheme. In our example, blue refers to positive correlations and red, negative. Furthermore, the darker colours signify a higher correlation among the covariates. Finally, we clustered variables with higher correlations together such that the covariates within the same rectangles are highly correlated such that they may have dependencies on each other. 
+
+### Correlation among Persistent Pollution
+```{r chemcorrelations, echo=FALSE, fig.align = "center", fig.dim = c(5,6)}
 # Estella's work 1
 library(corrplot)
 library(ggplot2)
 
-POP_PCB = c("POP_PCB1", "POP_PCB2","POP_PCB3", "POP_PCB4",
-            "POP_PCB5", "POP_PCB6","POP_PCB7", "POP_PCB8",
-            "POP_PCB9", "POP_PCB10", "POP_PCB11")
+POP_chemicals = c("POP_PCB1", "POP_PCB2","POP_PCB3", "POP_PCB4",
+                  "POP_PCB5", "POP_PCB6","POP_PCB7", "POP_PCB8",
+                  "POP_PCB9", "POP_PCB10", "POP_PCB11", 
+                  "POP_dioxin1", "POP_dioxin2","POP_dioxin3",
+                  "POP_furan1", "POP_furan2","POP_furan3","POP_furan4")
 
-POP_PCB_data <- pollutants [, POP_PCB]
-cc = cor(POP_PCB_data , method = "spearman")
+POP_chemicals_data <- pollutants [, POP_chemicals]
+cc = cor(POP_chemicals_data , method = "spearman")
 
 # cluster my POP_PCB so that those with similar patterns
 # of correlation coefficients are closer together.
 # https://jkzorz.github.io/2019/06/11/Correlation-heatmaps.html
 corrplot(cc, tl.col = "black", order = "hclust", hclust.method = "average",
-         addrect = 4, tl.cex = 0.7)
+         addrect = 11, tl.cex = 0.7)
 ```
 
-```{r dioxin_correlations}
-# Weiwei's work Part 1
-POP_dioxin = c("POP_dioxin1", "POP_dioxin2","POP_dioxin3")
-POP_dioxin_data <- pollutants [, POP_dioxin]
+Based on the above plot, we noticed the correlations mostly exist among the organic pollutants of the same kind. Specifically, the correlations among POP_PCB3,6,7 and POP_PCB8,9,4,5,1,2 are higher than others.
 
-# cluster my POP_dioxin so that those with similar patterns
-# of correlation coefficients are closer together.
-cc.dioxin = cor(POP_dioxin_data , method = "spearman")
-corrplot(cc.dioxin, tl.col = "black", order = "hclust",
-         hclust.method = "average", addrect = 3, tl.cex = 0.7)
+
+### Correlation between White Blood Cells
+```{r wbccorrelations, echo=FALSE, fig.align = "center", fig.dim = c(4,4)}
+# mxn's work
+WBC = c("whitecell_count", "lymphocyte_pct","monocyte_pct", 
+        "eosinophils_pct", "basophils_pct", "neutrophils_pct")
+WBC_data <- pollutants [, WBC]
+cc = cor(WBC_data , method = "spearman")
+corrplot(cc, tl.col = "black", order = "hclust", hclust.method = "average", tl.cex = 0.7)
 ```
 
-```{r furan_correlations}
-# Weiwei's work Part 2
-POP_furan = c("POP_furan1", "POP_furan2","POP_furan3","POP_furan4")
-POP_furan_data <- pollutants [, POP_furan]
+From the graph above, we see that there is no strong positive correlation among the components of white blood cells, however, there is a strong negative correlation between lymphocytes and eosinophils percentage in the given data.
 
-# cluster my POP_dioxin so that those with similar patterns
-# of correlation coefficients are closer together.
-cc.furan = cor(POP_furan_data , method = "spearman")
-corrplot(cc.furan, tl.col = "black", order = "hclust",
-         hclust.method = "average", addrect = 4, tl.cex = 0.7)
-```
+To further investigate how these correlations affect the observed data, we shall consider adding interaction terms to our model, and performed p-test to check their statistical significance.
 
 
-```{r pcbinteractions}
-# Estella's work 3
-f <- as.formula(
-  paste("length", paste("(", paste(POP_PCB, collapse = "+"), ")^2"), sep="~"))
-
-m_pcb <- lm(f, data = pollutants)
-summary(m_pcb)
-```
-```{r selectinteractions}
-# Estella's work 4 
-# setting threshold of pvalue to be 0.05 and assess possible interaction terms
-pvalues <- summary(m_pcb)$coefficients[,4]
-p_threshold = 0.05
-selected <- which(pvalues <= p_threshold)
-names(selected)
-```
-
-```{r dioxin_interactions}
-f_dioxin <- as.formula(
-  (paste("length", paste("(", paste(POP_dioxin, collapse = " + "), ")^2"), sep = " ~")))
-m_dioxin <- lm(f_dioxin, data = pollutants)
-summary(m_dioxin)
-```
-
-```{r furan_interactions}
-# interaction in furan
-f_furan <- as.formula(
-  (paste("length", paste("(", paste(POP_furan, collapse = " + "), ")^2"), sep = " ~")))
-
-m_furan <- lm(f_furan, data = pollutants)
-summary(m_furan)
-```
- 
- We observe no interaction should be included for Pop_furan and Popl_dioxin，and we only need to those interactions in POP_PCB:
-"POP_PCB2:POP_PCB6"   "POP_PCB2:POP_PCB7"   "POP_PCB2:POP_PCB8"   "POP_PCB2:POP_PCB10"  "POP_PCB3:POP_PCB7"  
-"POP_PCB6:POP_PCB11"  "POP_PCB7:POP_PCB8"   "POP_PCB10:POP_PCB11"
-
-# 4. Methods:
+# Methods
 Describe your statistical analysis: What is your model? Did you use any transformations or extensions of the basic multiple linear regression model? How did you select a model? Does the model fit the data well? Are the necessary assumptions met? Be sure to explain and justify your decisions.
 
 ```{r splitdata}
 train_data <- pollutants[1:600,]
 test_data <- pollutants[601:nrow(pollutants),]
 ```
+
+Linearity is one of the four assumptions in a linear regression model. To assess whether any covariate has a nonlinearity relationship with the outcome in the multiple linear regression model, added-variable plots(avPlot) are used, as shown in 7.4. The plots isolate the relationship between the outcome and each of the covariates after adjusting for the other covariate. If the plot of the outcome versus a covariate x has a nonlinear shape, the idealist regression model should include a higher power of x, for example $x^2$, besides the main effect. In this case, as shown in the avPlots, since all plots have a linear shape, the outcome is expected to have a linear relationship with all of the covariates. Therefore, the model constructed in this report does not consider nonlinear term for any of the covariates.
+
+As the given dataset is relatively large, we may assume the data is approximately Normally distributed due to the Central Limit Theorem.
+
+
+```{r cheminteractions}
+# Estella's work 3
+f <- as.formula(
+  paste("length", paste("(", paste(POP_chemicals, collapse = "+"), ")^2"), sep="~"))
+m_chem <- lm(f, data = pollutants)
+# summary(m_chem)
+```
+
+```{r selectinteractions}
+# Estella's work 4 
+# setting threshold of pvalue to be 0.05 and assess possible interaction terms
+pvalues <- summary(m_chem)$coefficients[19:nrow(summary(m_chem)$coefficients),4]
+p_threshold = 0.05
+selected <- which(pvalues <= p_threshold)
+names(selected)
+```
+
 
 ```{r buildmodel}
 #stepwise parameters selection without any interaction terms
@@ -346,3 +283,159 @@ mean((test_data$length - predAICInteraction)^2)
 mean((test_data$length - predBICInteraction)^2)
 ``` 
 
+# Results
+Report on the findings of your analysis
+
+# Discussion
+Comment on your findings/conclusions; describe any limitations of your analysis.
+
+We have considered the multicollinearity and interactions within the eleven PCB covariates and similarly for the three dioxin covariates and four furan covariates. However, the multicollinearity and interactions between these eighteen exposure covariates and other covariates are not considered. It is expected that there does not exist any causal relationship between exposure covariates and other covariates since the former relates to the surrounding environment and the latter relates to personal characteristics. For example, it’s believed that the concentration of POP_PCB10 is unrelated to the value of ageyrs and BMI.
+ 
+Besides, the report has analyzed whether the outcome has a nonlinear relationship with any of the covariates. However, it has not fully analyzed whether any of the remaining assumptions for linear regression models are broken, which include independence, normality and homoscedasticity. These assumptions can be further tested with plots and investigations of the residuals.
+
+
+
+\newpage
+# Appendix
+
+## Data Summary \label{datasummary}
+Looking at the useful metrics for the data
+```{r datasummary}
+summary(pollutants)
+```
+
+## Boxplots \label{largeboxplots}
+```{r boxplots, echo=FALSE}
+# Mxn's work
+# PCB 1-6
+par(mfrow=c(1,6))
+boxplot(pollutants[, 2], xlab="PCB 1")
+boxplot(pollutants[, 3], xlab="PCB 2")
+boxplot(pollutants[, 4], xlab="PCB 3")
+boxplot(pollutants[, 5], xlab="PCB 4")
+boxplot(pollutants[, 6], xlab="PCB 5")
+boxplot(pollutants[, 7], xlab="PCB 6")
+```
+
+```{r boxplots2, echo=FALSE}
+# PCB 7-11
+par(mfrow=c(1,5))
+boxplot(pollutants[, 8], xlab="PCB 7")
+boxplot(pollutants[, 9], xlab="PCB 8")
+boxplot(pollutants[, 10], xlab="PCB 9")
+boxplot(pollutants[, 11], xlab="PCB 10")
+boxplot(pollutants[, 12], xlab="PCB 11")
+```
+
+```{r boxplots3, echo=FALSE}
+# Dioxin
+par(mfrow=c(1,4))
+boxplot(pollutants[, 16], xlab="Furan 1")
+boxplot(pollutants[, 17], xlab="Furan 2")
+boxplot(pollutants[, 18], xlab="Furan 3")
+boxplot(pollutants[, 19], xlab="Furan 4")
+```
+
+```{r boxplots4, echo=FALSE}
+# Furan
+par(mfrow=c(1,3))
+boxplot(pollutants[, 13], xlab="Dioxin 1")
+boxplot(pollutants[, 14], xlab="Dioxin 2")
+boxplot(pollutants[, 15], xlab="Dioxin 3")
+```
+
+```{r boxplots5, echo=FALSE}
+# white blood cells and concentrations
+par(mfrow=c(1,6))
+boxplot(pollutants[, 20], xlab="WBC Cnt")
+boxplot(pollutants[, 21], xlab="lymph %")
+boxplot(pollutants[, 22], xlab="mono %")
+boxplot(pollutants[, 23], xlab="eosin %")
+boxplot(pollutants[, 24], xlab="baso %")
+boxplot(pollutants[, 25], xlab="neutro %")
+```
+
+```{r boxplots6, echo=FALSE}
+# others
+par(mfrow=c(1,4))
+boxplot(pollutants[, 26], xlab="BMI")
+boxplot(pollutants[, 30], xlab="Age")
+boxplot(pollutants[, 31], xlab="Smoke Yrs")
+boxplot(pollutants[, 33], xlab="Log cotinine")
+```
+
+## Outlier Entries \label{findoutliers}
+Here we will find entries where outliers for different covariate occurred.
+```{r findPCBoutlier}
+pollutant_mat = data.matrix(pollutants, rownames.force = NA)
+
+max_PCB_idx = c()
+for (c in 2:12) {
+  max_PCB_idx[c-1] = which.max(pollutant_mat[, c])
+}
+max_PCB_idx
+```
+
+```{r findDioxinoutlier}
+max_dioxin_idx = c()
+for (c in 13:15) {
+  max_dioxin_idx[c-12] = which.max(pollutant_mat[, c])
+}
+max_dioxin_idx
+```
+
+```{r findFuranoutlier}
+max_furan_idx = c()
+for (c in 16:19) {
+  max_furan_idx[c-15] = which.max(pollutant_mat[, c])
+}
+max_furan_idx
+```
+
+```{r finfWBCoutlier}
+max_WBC_idx = c()
+for (c in 20:25) {
+  max_WBC_idx[c-19] = which.max(pollutant_mat[, c])
+}
+max_WBC_idx
+```
+
+## AvPlots \label{AvPlots}
+```{r avplotSLR}
+# Judy's work Part 1
+# testing non-linearity in SLR
+# if for any covariate, residual vs x for M1 has a pattern and
+# residual vs x for M2 seems random, then y has a nonlinear
+# relationship with with x.
+# M1: fitting y to x
+# M2: fitting y to x^2
+
+par(mfrow=c(1, 3))
+outcome <- pollutants$length
+check <- function(x) {
+  M1 <- lm(outcome ~ x)
+  print(paste("residual for M1: ", sigma(M1)))
+  M2 <- lm(outcome ~ x + I(x^2))
+  print(paste("residual for M2: ", sigma(M2)))
+  plot(x, M1$residual)
+  plot(x, M2$residual)
+  plot(x, outcome)
+}
+
+list <- list(pollutants$ageyrs, pollutants$yrssmoke,
+             pollutants$BMI, pollutants$ln_lbxcot,
+             pollutants$whitecell_count, pollutants$lymphocyte_pct, 
+             pollutants$monocyte_pct, pollutants$eosinophils_pct, 
+             pollutants$basophils_pct, pollutants$neutrophils_pct)
+for (column in list) {
+  check(column)
+}
+```
+
+```{r avplotMLR}
+# Judy's work Part 2
+# testing non-linearity in MLR
+library(car)
+M <- lm (length ~ ., data=pollutants)
+avPlots(M, main="Added-Variable Plot")
+```
