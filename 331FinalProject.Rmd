@@ -207,33 +207,7 @@ names(selected)
 ```
 
 
-```{r buildmodel}
-#stepwise parameters selection without any interaction terms
-M0 <- lm(length ~ 1, data = train_data) # minimal model
-Mfull <- lm(length ~ ., data= train_data)
 
-## 2 corresponds to AIC
-## log(n) corresponds to BIC
-
-# stepwise AIC
-Mstart <- lm(length ~ ., data= train_data)
-system.time({
-  MAIC <- step(object = Mstart,
-               scope = list(lower = M0, upper = Mfull),
-               direction = "both", trace = 0, k = 2)
-})
-
-#stepwiseBIC
-system.time({
-  MBIC <- step(object = Mstart,
-               scope = list(lower = M0, upper = Mfull),
-               direction = "both", trace = 0, k = log(nrow(train_data)))
-})
-
-#stepwiseB_Adjusted R2
-MAIC
-MBIC
-```
 
 ```{r buildmodelinteractions}
 # stepwise parameters selection with any interaction terms
@@ -272,13 +246,11 @@ MBIC_Interaction
 
 ```{r testmodels}
 # mxn's work
-predAIC <- predict(MAIC, newdata=test_data)
-predBIC <- predict(MBIC, newdata=test_data)
+
 predAICInteraction <- predict(MAIC_Interaction, newdata=test_data)
 predBICInteraction <- predict(MBIC_Interaction, newdata=test_data)
 
-mean((test_data$length - predAIC)^2)
-mean((test_data$length - predBIC)^2)
+
 mean((test_data$length - predAICInteraction)^2)
 mean((test_data$length - predBICInteraction)^2)
 ``` 
