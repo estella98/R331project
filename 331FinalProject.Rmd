@@ -243,6 +243,10 @@ system.time({
 MAIC_Interaction
 MBIC_Interaction
 ```
+```{r testmodels}
+covariates_AIC <- names(MAIC_Interaction$coefficients[2:length(MAIC_Interaction$coefficients)])
+covariates_BIC <- names(MBIC_Interaction$coefficients[2:length(MBIC_Interaction$coefficients)])
+```
 
 ```{r testmodels}
 # mxn's work
@@ -254,6 +258,46 @@ predBICInteraction <- predict(MBIC_Interaction, newdata=test_data)
 mean((test_data$length - predAICInteraction)^2)
 mean((test_data$length - predBICInteraction)^2)
 ``` 
+This showed that the model selected by BIC was prefered. it gave us a lower MSE and it was also simple enough to interpret. At the same time, through
+the comparisons, we concluded that the interaction terms we filtered out earlier were unnecessary in our model.
+
+
+```{r}
+# estella's work cross validation using ridge on BIC model
+## model 1
+library(glmnet)
+Y <-  train_data[, c("length")] 
+BIC_train_X <-  train_data[, covariates_BIC] # Features selected by BIC 
+BIC_test_X <-  test_data[, covariates_BIC] 
+ # use ridge, default 10 folds
+cvfit_ridge <- cv.glmnet(x = data.matrix(BIC_train_X ), y = Y, alpha = 0)
+
+
+#estimated betas for min lambda
+coef(cvfit_ridge, s = "lambda.min")
+pred_ridge_BIC <- predict(cvfit_ridge, newx = data.matrix(BIC_test_X), s = "lambda.min")
+mean((test_data$length - pred_ridge_BIC)^2)
+
+```
+```{r}
+## estella's work cross validation using lasso to do model selections
+## model 2
+# Load libraries
+library(data.table)
+library(mltools)
+train_df <- as.data.table(train_data)
+train_oh <- one_hot(train_df )
+test_df <- as.data.table(test_data)
+test_oh <- one_hot(test_df )
+
+# try lasso and let lasso do the parameters selection
+all_train_oh_X <- train_oh[, -1] # remove y 
+all_test_oh_X <- test_oh[, -1] # remove y 
+cvfit_lasso_oh <- cv.glmnet(x = data.matrix(all_train_oh_X), y = Y, alpha = 1) # use lasso
+coef(cvfit_lasso_oh, s = "lambda.min")
+pred_lasso_all <- predict(cvfit_lasso_oh, newx = data.matrix(all_test_oh_X), s = "lambda.min")
+mean((test_oh$length - pred_lasso_all)^2)
+```
 
 # Results
 Report on the findings of your analysis
