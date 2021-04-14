@@ -458,7 +458,7 @@ Comment on your findings/conclusions; describe any limitations of your analysis.
 
 We have considered the multicollinearity and interactions within the eleven PCB covariates and similarly for the three dioxin covariates and four furan covariates. However, the multicollinearity and interactions between these eighteen exposure covariates and other covariates are not considered. It is expected that there does not exist any causal relationship between exposure covariates and other covariates since the former relates to the surrounding environment and the latter relates to personal characteristics. For example, it’s believed that the concentration of POP_PCB10 is unrelated to the value of ageyrs and BMI.
  
-Besides, a linear regression model has four assumptions, namely linearity, normality, heteroskedasticity and independence. We have analyzed and confirmed that the first three assumptions hold. Without time-series data, it is difficult to visualize and assess independence. However, with a large sample, residuals are approximately independent, and we can assume independence.
+Besides, a linear regression model has four assumptions, namely linearity, normality, heteroskedasticity and independence. We have analyzed and confirmed that the first three assumptions hold. Generally, we can make the assumption of independence when constructing the model. To further confirm the assumption, time-series data and a closer look at the data collection process will be helpful.
 
 
 
@@ -570,7 +570,6 @@ max_WBC_idx
 
 ## AvPlots \label{AvPlots}
 ```{r avplotSLR}
-# Judy's work Part 1
 # testing non-linearity in SLR
 # if for any covariate, residual vs x for M1 has a pattern and
 # residual vs x for M2 seems random, then y has a nonlinear
@@ -601,11 +600,10 @@ for (column in list) {
 ```
 
 ```{r avplotMLR}
-# # Judy's work Part 2
-# # testing non-linearity in MLR
-# library(car)
-# M <- lm (length ~ ., data=pollutants)
-# avPlots(M, main="Added-Variable Plot")
+# testing non-linearity in MLR
+library(car)
+M <- lm (length ~ ., data=pollutants)
+avPlots(M, main="Added-Variable Plot")
 ```
 
 ## Residuals vs Fitted plot \label{Residuals vs Fitted plot}
