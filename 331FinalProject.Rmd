@@ -35,7 +35,7 @@ We are looking to investigate the most influential factors that contribute to th
 # import dataset
 
 # CHANGE ABSOLUTE PATH
-setwd("~/Desktop/stat341/R331project/data")
+# setwd("~/Desktop/stat341/R331project/data")
 # setwd("~/School/4A/STAT 331/R331project/data")
 # setwd("~/Desktop/R331project/data")
 # setwd("C:/Users/huawei/Desktop/R331project/data")
