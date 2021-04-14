@@ -174,19 +174,16 @@ corrplot(cc, tl.col = "black", order = "hclust", hclust.method = "average", tl.c
 
 From the graph above, we see that there is no strong positive correlation among the components of white blood cells, however, there is a strong negative correlation between lymphocytes and eosinophils percentage in the given data.
 
-We shall omit the analysis on correlations between other covariate from this section as we do not expect personal health data such as BMI or years of smoke to have a logical significant correlation with each other, white blood cell data, or exposure to pollutants.
+We shall omit the analysis on correlations between other covariates from this section as we do not expect personal health data such as BMI or years of smoke to have a logically significant correlation with each other, white blood cell data, or exposure to pollutants.
 
-To further investigate how these listed correlations affect the observed data, we may use variance inflation factor (VIF), which we would further discuss in Methods sections.
+To further investigate how these listed correlations affect the observed data, we may use variance inflation factor (VIF), which we would further discuss in the Methods sections below.
 
 ### Possible Interactions among Persistent Pollution and White Blood Cells
-Associations between different covariates might affect their relationships with the outcomes. Therefore, it is also necessary to explore the possibility of adding interaction terms. In our data analysis, we are interested in whether the relationship between mean leukocyte telomere length and the white blood cells are influenced by the concentration of persistent pollution; To test our hypothesis, we performed a p-test and check their statistical significance. More details are discussed under the Methods section.
-
+Associations between different covariates might affect their relationships with the outcomes. Therefore, it is also necessary to explore the possibility of adding interaction terms. In our data analysis, we would like to investigate whether the relationship between average leukocyte telomere length and white blood cells is influenced by the concentration of persistent pollution. To test our hypothesis, we performed a p-test and check their statistical significance. More details are discussed under the Methods section.
 
 # Methods
-Describe your statistical analysis: What is your model? Did you use any transformations or extensions of the basic multiple linear regression model? How did you select a model? Does the model fit the data well? Are the necessary assumptions met? Be sure to explain and justify your decisions.
-
 ## Linear Model Assumptions
-Since we have no access to data collection process, we shall proceed by assuming that the independence assumption is satisfied. As for the normality assumption, as the given dataset is relatively large, we may assume the data is approximately Normally distributed due to the Central Limit Theorem.
+Since we have no access to the data collection process, we shall proceed by assuming that the independence assumption is satisfied. As for the normality assumption, as the given dataset is relatively large, we may assume the data is approximately Normally distributed due to the Central Limit Theorem.
 
 Now to assess whether any covariate has a nonlinearity relationship with the outcome in the multiple linear regression model, we used added-variable plots(avPlot), as shown in appendix \ref{AvPlots}. The plots isolate the relationship between the outcome and each of the covariates after adjusting for the other covariate. If the plot of the outcome versus a covariate x has a nonlinear shape, it may indicate a regression model with a higher power of this variable, for example, $x^2$. With the given data, we see from the avPlots that all plots have a linear shape, thus the outcome is expected to have a linear relationship with all of the covariates. Therefore, the models constructed in this report do not consider non-linear terms.
 
@@ -267,7 +264,7 @@ BIC_MSPE <- mean((test_data$length - predBICInteraction)^2)
 MAIC_Interaction
 AIC_MSPE
 
-MBIC_Interaction
+MBIC_Interaction # model 1
 BIC_MSPE
 ``` 
 
@@ -279,7 +276,7 @@ model1_f <-  formula(MBIC_Interaction)
 model1_f
 ``` 
 
-Furthermore, as we had only selected one interaction term in the AIC model and it did not improve the performance of the model. We decided that none of the interaction terms contribute significantly to the outcome of interest (telomere length). In the next part of the analysis, we have removed these terms for simplicity.  
+Furthermore, as we have only selected one interaction term in the AIC model and it did not improve the performance of the model. We decided that none of the interaction terms contribute significantly to the outcome of interest (telomere length). In the next part of the analysis, we have removed these terms for simplicity.  
 
 ### Reduce Multicolinearity
 An additional technique we may use to reduce the impact of multicollinearity on our model is checking variance inflation factor (VIF). As interaction terms were eliminated, we shall regress on all non-categorical covariates and identify those with the largest VIF one at a time until there were no more with 'high' multicollinearity. We used a VIF (Variance Inflation Factor) > 10 as an indicator of "high" multicollinearity (general practice). And after the covariate eliminations, The explanatory variables that remained from the selection are:
@@ -352,21 +349,22 @@ BIC_MSPE <- mean((test_data$length - predBICReduced)^2)
 MAIC_reduced
 AIC_MSPE
 
-MBIC_reduced # model 1
+MBIC_reduced # model 2
 BIC_MSPE
 ``` 
 
-We observe that the model selected by AIC is smaller compared to the previous section. The smaller model yields a better MSPE score which further confirms that the previous model selected by AIC has overfitted the training data.
-The model selected by BIC is still smaller than the one with AIC, and it also outperforms it. This model is different from Model 1 but as interpretable. Therefore, we decided to use the BIC model as our second candidate model, named Model 2. The formula of Model 2 is:
+We observe that the model selected by AIC is smaller compared to the previous section. The smaller model yields a better MSPE score which further confirms that the previous model selected by AIC has overfitted the training data. The detailed model summaries can be found in the appendix \ref{modelsummary2}.
 
-The formula of model 1 is:
+The model selected by BIC is still smaller than the one with AIC, and it also outperforms it. This model has different from Model 1 but is very parsimonious. Therefore, we decided to use the BIC model as our second candidate model, named Model 2.
+
+The formula of Model 2 is:
 ```{r print model 2 formula}
 model2_f <-  formula(MBIC_reduced)
 model2_f
 ``` 
 
 ### Model Selection via Forward-Backward Selection without Outliers
-Recall that when we were performing EDA in section \ref{datadistribution}, we have identified 3 entries that contribute to the extreme outliers in the pollutant exposure values, which were entry with index 436,285,and 559. In this section we shall remove these outliers and observe its effect on the model selection process.
+Recall that when we were performing EDA in section \ref{datadistribution}, we have identified 3 entries that contribute to the extreme outliers in the pollutant exposure values, which were entries with index 436,285, and 559. In this section, we shall remove these outliers and observe their effect on the model selection process.
 
 ```{r removeoutliers, echo = FALSE}
 set.seed(23)
@@ -410,7 +408,7 @@ MBIC_no
 BIC_MSPE
 ``` 
 
-We observe that without the outliers identified in the EDA section, stepwise algorithm selected the a smaller model with AIC and the same model as Model 2 with BIC. Since the model selected with AIC has a good prediction score and is interpretable, we shall consider this as another candidate model, called Model 3, which has the formula:
+We observe that without the outliers identified in the EDA section, the stepwise algorithm selected a smaller model with AIC and the same model as Model 2 with BIC. Since the model selected with AIC has a good prediction score and is interpretable, we shall consider this as another candidate model, called Model 3, which has the formula:
 
 ```{r print model 3 formula}
 model3_f <-  formula(MAIC_no)
@@ -418,9 +416,7 @@ model3_f
 ``` 
 
 ### Model Tuning via Cross-Validation with Ridge
-In order to get accurate prediction evaluations for our models, we used the idea of 75% and 25% train-test split; to ensure the entire training set was covered and each observation was well represented, we divided the training data into 10 folds and repeatedly cross-validated the MSPE.
-
-Besides, we performed shrinkage methods like LASSO and ridge to solve the overfitting problem. For example, we used ridge with cross validation to tune our Model 1, 2, and 3: 
+To get accurate prediction evaluations for our models, we used the idea of 75% and 25% train-test split; to ensure the entire training set was covered and each observation was well represented, we divided the training data into 10 folds and repeatedly cross-validated the MSPE.
 
 ```{r ridgeBICcv, echo = FALSE}
 # estella's work cross validation using ridge on BIC model
@@ -461,21 +457,23 @@ pred_model3 <- predict(cv_ridge_model3, newx = data.matrix(test_model3_X ), s = 
 Ridge_MSPE3 <- mean((test_data$length - pred_model3)^2)
 ``` 
 
+Besides, we performed shrinkage methods like LASSO and ridge to solve the overfitting problem. For example, we used ridge with cross-validation to tune our Model 1, 2, and 3: 
+
 ```{r printridgetestmodels}
-model1_f
+# Model 1 Test Score
 Ridge_MSPE1
 
-model2_f
+# Model 2 Test Score
 Ridge_MSPE2
 
-model3_f
+# Model 3 Test Score
 Ridge_MSPE3
 ``` 
 
 
 ### Model Selection via Cross-Validation with LASSO
 
-With the consideration that lasso could also do parameter selections, we examined sending the remaining covariates in the VIF reduced model alongwith the categorical covariates to ‘glmnet’ function and let it pick the best model for us. We named it model 2.
+With the consideration that lasso could also do parameter selections, we examined sending the remaining covariates in the VIF reduced model along with the categorical covariates to the ‘glmnet’ function and let it pick the best model for us. We named it Model 4.
 
 ```{r lassocv, echo = FALSE}
 ## estella's work cross validation using lasso to do model selections on reduced model selected by VIF
@@ -510,6 +508,14 @@ f_lasso
 lasso_MSPE
 ``` 
 
+By comparing the performance on the testset, we observed that the model with the formula
+
+```{r printbestmodelformula}
+model2_f
+``` 
+
+This model is also the most parsimonious and interpretable. Thus we shall further analyse this model and draw conclusion from it.
+
 # Results
 Report on the findings of your analysis
 
@@ -520,6 +526,12 @@ Ridge_MSPE2
 Ridge_MSPE3
 lasso_MSPE
 ```
+
+Now we shall take a closer look at our best model,
+```{r coefbestmodel}
+coef(MBIC_reduced)
+``` 
+
 
 Comparing the MSE of the three different candidates we found earlier, model2 with the formula f = length ~ POP_furan3 + ageyrs has the best performance. As mentioned earlier, this model is also generalized, easy to interpret, and unlikely to get overfitted. We can now answer the question asked in our objective, that the age of the person, and the concentration of foran 3 contribute greatly to the average leukocyte telomere length in a person.
 
@@ -712,22 +724,16 @@ abline(0,1)
 ```
 
 
-
 ## Model Summaries 
-comments by Estella:
-!need to revise, now we only have 3 models, see result above for more information 
-
-
 ### Models Selected with Interactions \label{modelsummary1}
 ```{r printModelSummaries1}
-# stepwiseB_Adjusted R2
-# summary(cv_ridge_model1)
-# summary(MBIC_Interaction)
+summary(MAIC_Interaction)
+summary(MBIC_Interaction)
 ```
 
 ### Models after VIF Selection \label{modelsummary2}
 ```{r printModelSummaries2}
-# summary(MAIC_reduced)
-# summary(MBIC_reduced)
+summary(MAIC_reduced)
+summary(MBIC_reduced)
 ```
 
