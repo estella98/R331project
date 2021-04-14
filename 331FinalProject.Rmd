@@ -42,7 +42,7 @@ We are looking to investigate the most influential factors that contribute to th
 
 # CHANGE ABSOLUTE PATH
 # setwd("~/Desktop/stat341/R331project/data")
-# setwd("~/Desktop/R331project/data")
+# setwd("~/School/4A/STAT 331/R331project/data")
 # setwd("~/Desktop/R331project/data")
 # setwd("C:/Users/huawei/Desktop/R331project/data")
 
@@ -514,17 +514,18 @@ f_lasso
 lasso_MSPE
 ``` 
 
-By comparing the performance on the testset, we observed that the model with the formula
+By comparing the model performance on the testset, we observed that the model with the formula
 
 ```{r printbestmodelformula}
 model2_f
 ``` 
 
-This model is also the most parsimonious and interpretable. Thus we shall further analyse this model and draw conclusion from it.
+This model is also the most parsimonious and interpretable. Thus we shall further analyze this model and draw conclusions from it.
 
 # Results
 
-In the end, we looked at the model performance on the remaining test set and computed the MPSE of each model. The MPSE of the four models we have considered are as follows:
+We have built four models in the previous section and computed their performance scores on a test set. The MPSE of the four models we have considered are as follows:
+
 ```{r model prediction mse }
 Ridge_MSPE1
 Ridge_MSPE2
@@ -532,16 +533,17 @@ Ridge_MSPE3
 lasso_MSPE
 ```
 
-By comparing different models, we found that Model 2 has the best prediction performance on new data. It is also the most interpretable and parsimonious. We shall now take a closer look at the parameters and coefficients of this model.
+We also decided in the last section that Model 2 has the best prediction performance, is the most interpretable and parsimonious. We shall now take a closer look at the parameters and coefficients of this model.
+
 ```{r coefbestmodel}
 coef(cv_ridge_model2)
 ``` 
 
-The output shows that Model 2 considers POP_furan3 and ageyrs and the coefficient values suggest that age has a negative linear effect on average leukocyte telomere length while the pollutant has a small positive influence. This implies that telomere length decreases with increasing age (result 1) and increases with increasing exposure to furan3 (result 2). 
+The output shows that Model 2 considers POP_furan3 and ageyrs and the coefficient values suggest that age and the PCB pollutant have a negative linear effect on average leukocyte telomere length. This implies that telomere length decreases with increasing age and increasing exposure to furan3. This result is intuitive as pollutants are harmful to human health thus accelerates telomere wear. 
 
-The first result is intuitive while the second one is not. Further investigating the other three models (in appendix \ref{modelcoef}), we noticed that with all models, when age is present as a covariate, other covariates generally have a positive influence on the telomere length. We shall further discuss this in the Discussion section below.
+As mentioned earlier, this model is generalized and unlikely to overfit. We can now answer the questions in our objective. From Model 2, we may conclude that both the age of a person and their exposure to furan 3 contribute greatly to the average leukocyte telomere length. 
 
-As mentioned earlier, this model is also generalized, easy to interpret, and unlikely to get overfitted. We can now answer the question asked in our objective, that the age of the person, and the concentration of foran 3 contribute greatly to the average leukocyte telomere length in a person.
+Furthermore, upon investigation into the other three models (in appendix \ref{modelcoef}), we noticed that with all models, when age is present as a covariate, while the other factors are not consistent. We shall further discuss this in the Discussion section below. Thus we may conclude that in general, the age of the person is the main factor in telomere length, and exposure to different pollutants tends to reduce the length as well.
 
 
 # Discussion
@@ -550,7 +552,7 @@ We have considered the multicollinearity and interactions within the eleven PCB 
  
 In addition, a linear regression model has four assumptions, namely linearity, normality, homoscedasticity, and independence. We have analyzed and confirmed that the first three assumptions hold. Generally, we can assume independence when constructing the model. To further confirm the assumption, time-series data and a closer look at the data collection process will be helpful.
 
-We have mentioned in the previous section that when age is present as a covariate, the coefficients for other variables are generally negative, which can be counter-intuitive. Since in all four models we have considered, age has always been a covariate, it may be interesting to investigate linear models with age being the only covariate. We may also analyse the data again while placing our focus on non-age variables and building models with covariates other than age.
+We have mentioned in the previous section that age is always present as a covariate in our models, while other pollutants' effects are not always consistent. Thus it may be interesting to investigate linear models with age being the only covariate. We may also analyze the data again while placing our focus on non-age variables and building models with covariates other than age.
 
 
 \newpage
