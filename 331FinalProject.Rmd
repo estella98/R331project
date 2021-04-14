@@ -36,7 +36,7 @@ We are looking to investigate the most influential factors that contribute to th
 # CHANGE ABSOLUTE PATH
 # setwd("~/Desktop/stat341/R331project/data")
 # setwd("~/School/4A/STAT 331/R331project/data")
-setwd("~/Desktop/R331project/data")
+# setwd("~/Desktop/R331project/data")
 # setwd("C:/Users/huawei/Desktop/R331project/data")
 
 pollutants_raw <- read.csv("pollutants.csv", header = TRUE)
@@ -132,7 +132,7 @@ Other covariates, as we see from the boxplots, do not have outliers that are as 
 
 
 ## Multicolinearity
-We learned that severe multicollinearity between covariates could result in unstable and sensitive coefficient estimates. Therefore, in this section, we will investigate correlations among values that we may expect multicollinearity to appear, such as between different types of organic pollutants POP_PCB1--11, POP_dioxin1-3, Pop_furan1--4, as well as white blood cell components.
+We learned that severe multicollinearity between covariates could result in unstable coefficient estimates and inflated standard errors. Therefore, in this section, we will investigate correlations among values that we may expect multicollinearity to appear, such as between different types of organic pollutants POP_PCB1--11, POP_dioxin1-3, Pop_furan1--4, as well as white blood cell components.
 
 To obtain the heatmaps that visualize correlations among covariates, we first computed Spearman correlations for each pair of covariates of interest and represented the measured values through gradients of a color scheme. In our example, blue refers to positive correlations and red, negative. Furthermore, the darker colours signify a higher correlation among the covariates. Finally, we clustered variables with higher correlations together such that the covariates within the same rectangles are highly correlated such that they may have dependencies on each other. 
 
@@ -173,69 +173,58 @@ corrplot(cc, tl.col = "black", order = "hclust", hclust.method = "average", tl.c
 
 From the graph above, we see that there is no strong positive correlation among the components of white blood cells, however, there is a strong negative correlation between lymphocytes and eosinophils percentage in the given data.
 
-To further investigate how these correlations affect the observed data, we shall consider adding interaction terms to our model, and performed p-test to check their statistical significance.
+We shall omit the analysis on correlations between other covariate from this section as we do not expect personal health data such as BMI or years of smoke to have a logical significant correlation with each other, white blood cell data, or exposure to pollutants.
+
+To further investigate how these listed correlations affect the observed data, we shall consider adding interaction terms to our model, and performed p-test to check their statistical significance.
 
 
 # Methods
 Describe your statistical analysis: What is your model? Did you use any transformations or extensions of the basic multiple linear regression model? How did you select a model? Does the model fit the data well? Are the necessary assumptions met? Be sure to explain and justify your decisions.
 
+## Linear Model Assumptions
+Since we have no access to data collection, we shall proceed by assuming that the independence assumption is satisfied.
+
+As for the normality assumption, as the given dataset is relatively large, we may assume the data is approximately Normally distributed due to the Central Limit Theorem.
+
+Now to assess whether any covariate has a nonlinearity relationship with the outcome in the multiple linear regression model, we used added-variable plots(avPlot), as shown in appendix \ref{AvPlots}. The plots isolate the relationship between the outcome and each of the covariates after adjusting for the other covariate. If the plot of the outcome versus a covariate x has a nonlinear shape, it may indicate a regression model with a higher power of this variable, for example, $x^2$. With the given data, we see from the avPlots that all plots have a linear shape, thus the outcome is expected to have a linear relationship with all of the covariates. Therefore, the models constructed in this report do not consider non-linear terms.
+
+## Finding the model
+
+We shall first split the data into training and testing set to ensure the final model is well-generalized without problems such as overfitting or underfitting.
+
 ```{r splitdata}
-train_data <- pollutants[1:600,]
-test_data <- pollutants[601:nrow(pollutants),]
+set.seed(23)
+train_idx <- sample(nrow(pollutants), 650, replace = FALSE, prob = NULL)
+train_data <- pollutants[train_idx,]
+test_data <- pollutants[-train_idx, ]
 ```
 
-Linearity is one of the four assumptions in a linear regression model. To assess whether any covariate has a nonlinearity relationship with the outcome in the multiple linear regression model, added-variable plots(avPlot) are used, as shown in 7.4. The plots isolate the relationship between the outcome and each of the covariates after adjusting for the other covariate. If the plot of the outcome versus a covariate x has a nonlinear shape, the idealist regression model should include a higher power of x, for example $x^2$, besides the main effect. In this case, as shown in the avPlots, since all plots have a linear shape, the outcome is expected to have a linear relationship with all of the covariates. Therefore, the model constructed in this report does not consider nonlinear term for any of the covariates.
+### Investigate Interactions
 
-As the given dataset is relatively large, we may assume the data is approximately Normally distributed due to the Central Limit Theorem.
+As we have seen in the EDA section, we would like to investigate interactions among pollutants as well as white blood cell-related data. By building a large linear model and filtering the interactions with p values $\leq 0.05$, we have selected the following potential interaction terms that we may consider in the model building process:
 
-
-```{r cheminteractions}
-# Estella's work 3
+```{r chemwbcinteractions, echo=FALSE}
+# Estella and mxn' work
+chemicals_WBC = append(POP_chemicals, WBC)
 f <- as.formula(
-  paste("length", paste("(", paste(POP_chemicals, collapse = "+"), ")^2"), sep="~"))
-m_chem <- lm(f, data = pollutants)
-# summary(m_chem)
+  paste("length", paste("(", paste(chemicals_WBC, collapse = "+"), ")^2"), sep="~"))
+m_chemwbc <- lm(f, data = pollutants)
 ```
-
-```{r selectinteractions}
-# Estella's work 4 
+```{r selectinteractions, echo=FALSE}
+# Estella and mxn' work
 # setting threshold of pvalue to be 0.05 and assess possible interaction terms
-pvalues <- summary(m_chem)$coefficients[19:nrow(summary(m_chem)$coefficients),4]
+pvalues <- summary(m_chemwbc)$coefficients[26:nrow(summary(m_chemwbc)$coefficients),4]
 p_threshold = 0.05
 selected <- which(pvalues <= p_threshold)
+```
+
+```{r printselected}
 names(selected)
 ```
 
+We now shall select a linear model with all covariate and interaction terms, we can find the summary of the resulting model in the appendix \ref{modelsummary1}. 
 
-```{r buildmodel}
-#stepwise parameters selection without any interaction terms
-M0 <- lm(length ~ 1, data = train_data) # minimal model
-Mfull <- lm(length ~ ., data= train_data)
-
-## 2 corresponds to AIC
-## log(n) corresponds to BIC
-
-# stepwise AIC
-Mstart <- lm(length ~ ., data= train_data)
-system.time({
-  MAIC <- step(object = Mstart,
-               scope = list(lower = M0, upper = Mfull),
-               direction = "both", trace = 0, k = 2)
-})
-
-#stepwiseBIC
-system.time({
-  MBIC <- step(object = Mstart,
-               scope = list(lower = M0, upper = Mfull),
-               direction = "both", trace = 0, k = log(nrow(train_data)))
-})
-
-#stepwiseB_Adjusted R2
-MAIC
-MBIC
-```
-
-```{r buildmodelinteractions}
+```{r buildmodelinteractions, echo=FALSE}
 # stepwise parameters selection with any interaction terms
 M0 <- lm(length ~ 1, data = train_data) # minimal model
 
@@ -247,44 +236,174 @@ f_interaction <- as.formula(
   paste("length", paste("(", single,"+", interaction, ")"), sep = " ~"))
 
 Mfull <- lm(f_interaction, data = train_data)
-Mstart <- lm(f_interaction, data = train_data)
+Mstart <- lm(length ~ ., data = train_data) 
 
 # stepwise AIC
 Mstart <- lm(length ~ ., data= train_data)
-system.time({
-  MAIC_Interaction <- step(object = Mstart,
-                           scope = list(lower = M0, upper = Mfull),
-                           direction = "both", trace = 0, k = 2)
-})
+
+MAIC_Interaction <- step(object = Mstart,
+                         scope = list(lower = M0, upper = Mfull),
+                         direction = "both", trace = 0, k = 2)
 
 #stepwiseBIC
-system.time({
-  MBIC_Interaction <- step(object = Mstart,
-                           scope = list(lower = M0, upper = Mfull),
-                           direction = "both", trace = 0, 
-                           k = log(nrow(train_data)))
-})
-
-#stepwiseB_Adjusted R2
-MAIC_Interaction
-MBIC_Interaction
+MBIC_Interaction <- step(object = Mstart,
+                         scope = list(lower = M0, upper = Mfull),
+                         direction = "both", trace = 0, 
+                         k = log(nrow(train_data)))
 ```
-
-```{r testmodels}
+```{r testmodelsinteractions, echo=FALSE}
 # mxn's work
-predAIC <- predict(MAIC, newdata=test_data)
-predBIC <- predict(MBIC, newdata=test_data)
 predAICInteraction <- predict(MAIC_Interaction, newdata=test_data)
 predBICInteraction <- predict(MBIC_Interaction, newdata=test_data)
-
-mean((test_data$length - predAIC)^2)
-mean((test_data$length - predBIC)^2)
-mean((test_data$length - predAICInteraction)^2)
-mean((test_data$length - predBICInteraction)^2)
+AIC_MSPE <- mean((test_data$length - predAICInteraction)^2)
+BIC_MSPE <- mean((test_data$length - predBICInteraction)^2)
 ``` 
+
+```{r printtestinteractionmodels}
+MAIC_Interaction
+AIC_MSPE
+
+MBIC_Interaction
+BIC_MSPE
+``` 
+
+This result shows that the model selected by BIC was preferred as it has a lower MSPE, very generalized, and easy to interpret. At the same time, note that the model chosen by AIC has more parameters but a lower prediction score, this implies that the added parameters added too much variability to the model and seems to have overfitted the training data. 
+Furthermore, as we had included only one interaction term in the AIC model and it did not improve the performance of the model. We decided that none of the interaction terms contribute significantly to the outcome of interest (telomere length). In the next part of the analysis, we have removed these terms for simplicity. 
+
+### Reduce Multicolinearity
+An additional technique we may use to reduce the impact of multicollinearity on our model is checking variance inflation factor (VIF). As interaction terms were eliminated, we shall regress on all non-categorical covariates and identify those with the largest VIF one at a time until there were no more with 'high' multicollinearity. We used a VIF (Variance Inflation Factor) > 10 as an indicator of "high" multicollinearity (general practice). And after the covariate eliminations, the reduced covariates looked like: 
+
+```{r vifreduction, echo = FALSE}
+# est's work
+library(car)
+
+current_m <- lm(length ~ . -edu_cat - race_cat - smokenow - male ,data = train_data)
+threshold <- 10
+covariates <- colnames(train_data)
+covariates <- covariates[!(covariates == "length")]
+VIFselected<- covariates
+
+while (TRUE){
+  VIFS <- as.numeric(vif(current_m))
+  max_VIF <- max(VIFS)
+  max_idx <- which.max(VIFS)
+  if (max_VIF > threshold){
+    # update selected
+    VIFselected <- VIFselected[-max_idx]
+    # update the new model
+    f <- as.formula((paste("length", paste(VIFselected, collapse = " + "), sep = " ~")))
+    # build the full model starting with all the covariates selcted
+    current_m<- lm(f, data = train_data)
+  }
+  else{
+    #stop the loop
+    #print("stop")
+    break
+  }
+}
+```
+
+The explanatory variables that remained from the selection are:
+
+```{r printvifreductionresult}
+VIFselected
+``` 
+
+To validate our parameter selection steps, we could run stepwise selection again on the reduced model.
+
+### Model via Forward-Backward Selection
+
+```{r stepwiseonreducedmodel, echo = FALSE}
+# stepwise parameters selection with any interaction terms
+M0 <- lm(length ~ 1, data = train_data) # minimal model
+
+f_interaction <- as.formula(
+  paste("length", paste(VIFselected, collapse = " + "), sep = " ~"))
+Mfull <- lm(f_interaction, data = train_data)
+Mstart <- lm(f_interaction, data = train_data)
+
+MAIC_reduced <- step(object = Mfull,
+                     scope = list(lower = M0, upper = Mfull),
+                     direction = "both", trace = 0, k = 2)
+
+#stepwiseBIC
+MBIC_reduced <- step(object = Mfull,
+                     scope = list(lower = M0, upper = Mfull),
+                     direction = "both", trace = 0, 
+                     k = log(nrow(train_data)))
+``` 
+
+```{r testreducedmodels, echo = FALSE}
+predAICReduced <- predict(MAIC_reduced, newdata=test_data)
+predBICReduced <- predict(MBIC_reduced, newdata=test_data)
+AIC_MSPE <- mean((test_data$length - predAICReduced)^2)
+BIC_MSPE <- mean((test_data$length - predBICReduced)^2)
+``` 
+
+```{r printreducedtestmodels}
+MAIC_reduced
+AIC_MSPE
+
+MBIC_reduced
+BIC_MSPE
+``` 
+
+As we see, we get the same result that the model selected by BIC still outperformed the one selected by AIC. Therefore this model is our first candidate model I. We also built another model using the automatic parameter selections of Lasso, which we would discuss later.
+
+### Model via Cross-Validation with Ridge
+In order to get accurate prediction evaluations for our models, we used the idea of 80% and 20% train-test split; To ensure the entire training set is covered and each observation is well represented, we divided the training data into 10 folds and repeatedly cross-validated the MSPE. Besides, we performed shrinkage methods like lasso and ridge to solve the overfitting problem. For example, we used ridge with cross validation to update our Model I as follow: 
+
+
+```{r ridgeBICcv}
+# estella's work cross validation using ridge on BIC model
+## model 1
+library(glmnet)
+Y <-  train_data[, c("length")] 
+BIC_train_X <-  train_data[, c( "ageyrs", "POP_furan3")] # Features selected by BIC 
+BIC_test_X <-  test_data[, c( "ageyrs", "POP_furan3")] 
+ # use ridge, default 10 folds
+cvfit_ridge <- cv.glmnet(x = data.matrix(BIC_train_X ), y = Y, alpha = 0)
+
+# estimated betas for min lambda
+coef(cvfit_ridge, s = "lambda.min")
+pred_ridge_BIC <- predict(cvfit_ridge, newx = data.matrix(BIC_test_X), s = "lambda.min")
+```
+
+With the consideration that lasso could also do parameter selections, we examined sending the remaining covariates in the VIF reduced model alongwith the categorical covariates to ‘glmnet’ function and let it pick the best model for us. 
+
+### Model via Cross-Validation with LASSO
+
+```{r lasso cv}
+## estella's work cross validation using lasso to do model selections on reduced model selected by VIF
+## model 2
+# Load libraries
+library(data.table)
+library(mltools)
+
+train_df <- as.data.table(train_data[c(VIFselected)])
+train_oh <- one_hot(train_df )
+test_df <- as.data.table(test_data[c(VIFselected)])
+test_oh <- one_hot(test_df )
+
+# try lasso and let lasso do the parameters selection
+cvfit_lasso_oh <- cv.glmnet(x = data.matrix(train_oh), y = Y, alpha = 1) # use lasso
+coef(cvfit_lasso_oh, s = "lambda.min")
+pred_lasso <- predict(cvfit_lasso_oh, newx = data.matrix(test_oh ), s = "lambda.min")
+mean((test_data$length - pred_lasso)^2)
+```
+
 
 # Results
 Report on the findings of your analysis
+
+In the end, we looked at the model performance on the remaining test set and computed the MPSE of each model.
+```{r model prediction mse }
+#model 1
+mean((test_data$length - pred_ridge_BIC)^2)
+#model 2
+mean((test_data$length - pred_lasso)^2)
+
+```
 
 # Discussion
 Comment on your findings/conclusions; describe any limitations of your analysis.
@@ -438,4 +557,18 @@ for (column in list) {
 library(car)
 M <- lm (length ~ ., data=pollutants)
 avPlots(M, main="Added-Variable Plot")
+```
+
+## Model Summaries 
+### Models Selected with Interactions \label{modelsummary1}
+```{r printModelSummaries1}
+# stepwiseB_Adjusted R2
+summary(MAIC_Interaction)
+summary(MBIC_Interaction)
+```
+
+### Models after VIF Selection \label{modelsummary2}
+```{r printModelSummaries2}
+summary(MAIC_reduced)
+summary(MBIC_reduced)
 ```
