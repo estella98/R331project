@@ -2,7 +2,8 @@
 title: "STAT 331 Final Project"
 author: "Maxine, Estella, Judy, Weiwei"
 date: "04/12/2021"
-
+header-includes:
+  - \DeclareUnicodeCharacter{FF0C}{$\bullet$}
 link-citations: yes
 linkcolor: blue
 output:
@@ -242,7 +243,6 @@ p_threshold = 0.05
 selected <- which(pvalues <= p_threshold)
 names(selected)
 ```
-
 
 
 ```{r buildmodel}
