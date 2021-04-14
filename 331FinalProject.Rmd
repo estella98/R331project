@@ -36,7 +36,7 @@ We are looking to investigate the most influential factors that contribute to th
 # CHANGE ABSOLUTE PATH
 # setwd("~/Desktop/stat341/R331project/data")
 # setwd("~/School/4A/STAT 331/R331project/data")
-setwd("~/Desktop/R331project/data")
+# setwd("~/Desktop/R331project/data")
 # setwd("C:/Users/huawei/Desktop/R331project/data")
 
 pollutants_raw <- read.csv("pollutants.csv", header = TRUE)
@@ -180,27 +180,27 @@ To further investigate how these correlations affect the observed data, we shall
 Describe your statistical analysis: What is your model? Did you use any transformations or extensions of the basic multiple linear regression model? How did you select a model? Does the model fit the data well? Are the necessary assumptions met? Be sure to explain and justify your decisions.
 
 ```{r splitdata}
-train_data <- pollutants[1:600,]
-test_data <- pollutants[601:nrow(pollutants),]
+train_data <- pollutants[1:650,]
+test_data <- pollutants[651:nrow(pollutants),]
 ```
 
-Linearity is one of the four assumptions in a linear regression model. To assess whether any covariate has a nonlinearity relationship with the outcome in the multiple linear regression model, added-variable plots(avPlot) are used, as shown in 7.4. The plots isolate the relationship between the outcome and each of the covariates after adjusting for the other covariate. If the plot of the outcome versus a covariate x has a nonlinear shape, the idealist regression model should include a higher power of x, for example $x^2$, besides the main effect. In this case, as shown in the avPlots, since all plots have a linear shape, the outcome is expected to have a linear relationship with all of the covariates. Therefore, the model constructed in this report does not consider nonlinear term for any of the covariates.
+Linearity is one of the four assumptions in a linear regression model. To assess whether any covariate has a nonlinearity relationship with the outcome in the multiple linear regression model, added-variable plots(avPlot) are used, as shown in appendix \ref{AvPlots}. The plots isolate the relationship between the outcome and each of the covariates after adjusting for the other covariate. If the plot of the outcome versus a covariate x has a nonlinear shape, the idealist regression model should include a higher power of x, for example $x^2$, besides the main effect. In this case, as shown in the avPlots, since all plots have a linear shape, the outcome is expected to have a linear relationship with all of the covariates. Therefore, the model constructed in this report does not consider nonlinear term for any of the covariates.
 
 As the given dataset is relatively large, we may assume the data is approximately Normally distributed due to the Central Limit Theorem.
 
 
-```{r cheminteractions}
-# Estella's work 3
+```{r chemwbcinteractions}
+# Estella and mxn' work
+chemicals_WBC = append(POP_chemicals, WBC)
 f <- as.formula(
-  paste("length", paste("(", paste(POP_chemicals, collapse = "+"), ")^2"), sep="~"))
-m_chem <- lm(f, data = pollutants)
-# summary(m_chem)
+  paste("length", paste("(", paste(chemicals_WBC, collapse = "+"), ")^2"), sep="~"))
+m_chemwbc <- lm(f, data = pollutants)
 ```
 
 ```{r selectinteractions}
-# Estella's work 4 
+# Estella and mxn' work
 # setting threshold of pvalue to be 0.05 and assess possible interaction terms
-pvalues <- summary(m_chem)$coefficients[19:nrow(summary(m_chem)$coefficients),4]
+pvalues <- summary(m_chemwbc)$coefficients[26:nrow(summary(m_chemwbc)$coefficients),4]
 p_threshold = 0.05
 selected <- which(pvalues <= p_threshold)
 names(selected)
