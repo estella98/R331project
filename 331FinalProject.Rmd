@@ -142,5 +142,5 @@ for (column in list) {
 # testing non-linearity in MLR
 library(car)
 M <- lm (length ~ ., data=pollutants)
-avPlots(M)
+avPlots(M, main="Added-Variable Plot")
 ```
