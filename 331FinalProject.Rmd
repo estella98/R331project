@@ -23,9 +23,15 @@ knitr::opts_chunk$set(echo = TRUE)
 
 
 # Summary
-A maximum of 200 words describing the objective of the report, an overview of the statistical analysis, and summary of the main results.
+In this report, we would like to investigate the effect of the persistent pollutants on peoples’ cellular aging, particularly, telomere lengths. With the given data, to explore the most influential covariates that contribute to the average leukocyte telomere length, we first look at the distribution of different covariates and then use several different tools such as t-test stepwise-algorithm, LASSO, and Ridge to select models. 
+
+After confirming the fundamental assumptions of the linear regression model, we first use AIC and BIC in stepwise selection to get our first potential model, Model 1, with minimum mean prediction squared error (MPSE). Then as we noticed there are no significant interactions, we eliminated covariates with high variance inflation factor (VIF) to reduce multicollinearity and used the stepwise function to get Model 2. Finally, with cross-validation and shrinkage methods like LASSO and ridge, Model 3 and 4 are selected. 
+
+By comparing different models, we found Model 2 has the lowest MPSE while maintaining interpretability and parsimony. This model considers one type of furan pollutant (POP_furan3) and people’s age (ageyrs) and finds that age has a negative linear effect on average leukocyte telomere length while the pollutant has a small positive influence.
+
 
 # Objective 
+
 We are looking to investigate the most influential factors that contribute to the average leukocyte telomere length in a person. We would like to especially look for human-adjustable factors such as whether a person smokes or exposure to persistent organic pollutants. 
 
 
@@ -183,9 +189,9 @@ Associations between different covariates might affect their relationships with 
 
 # Methods
 ## Linear Model Assumptions
-Since we have no access to the data collection process, we shall proceed by assuming that the independence assumption is satisfied. As for the normality assumption, as the given dataset is relatively large, we may assume the data is approximately Normally distributed due to the Central Limit Theorem.
+Since we have no access to the data collection process, we shall proceed by assuming that the independence assumption is satisfied. As for the normality assumption, as the given dataset is relatively large, we may assume the data is approximately normally distributed due to the Central Limit Theorem.
 
-Now to assess whether any covariate has a nonlinearity relationship with the outcome in the multiple linear regression model, we used added-variable plots(avPlot), as shown in appendix \ref{AvPlots}. The plots isolate the relationship between the outcome and each of the covariates after adjusting for the other covariate. If the plot of the outcome versus a covariate x has a nonlinear shape, it may indicate a regression model with a higher power of this variable, for example, $x^2$. With the given data, we see from the avPlots that all plots have a linear shape, thus the outcome is expected to have a linear relationship with all of the covariates. Therefore, the models constructed in this report do not consider non-linear terms.
+Now to assess whether any covariate has a non-linear relationship with the outcome in the multiple linear regression model, we used added-variable plots(avPlot), as shown in appendix \ref{AvPlots}. The plots isolate the relationship between the outcome and each of the covariates after adjusting for the other covariates. If the plot of the outcome versus a covariate x has a nonlinear shape, it may indicate a regression model with a higher power of this variable, for example, $x^2$. With the given data, we see that all plots have a linear shape, thus the outcome is expected to have a linear relationship with all of the given covariates. Therefore, the models constructed in this report do not consider non-linear terms.
 
 Finally, we also need to verify the equal variance (homoscedasticity) assumption. As shown in the appendix \ref{Residuals vs Fitted plot}, if there are evident patterns in the residuals, we might not be able to simply trust the results. Fortunately, we can see that the random residuals are uncorrelated and uniform.
 
@@ -199,7 +205,7 @@ train_data <- pollutants[train_idx,]
 test_data <- pollutants[-train_idx, ]
 ```
 
-### Investigate Interactions
+### Investigate Interactions \label{investigateinteractions}
 As we have seen in the EDA section, we would like to investigate interactions among pollutants as well as white blood cell-related data. By building a large linear model and filtering the interactions with p values $\leq 0.05$, we have selected the following potential interaction terms that we may consider in the model building process:
 
 ```{r chemwbcinteractions, echo=FALSE}
@@ -221,7 +227,7 @@ selected <- which(pvalues <= p_threshold)
 names(selected)
 ```
 
-We now shall select a linear model with all covariate and interaction terms, we can find the summary of the resulting model in the appendix \ref{modelsummary1}. 
+We now shall select a linear model with all covariate and interaction terms. The summary of the resulting model can be found in the appendix \ref{modelsummary1}. 
 
 ```{r buildmodelinteractions, echo=FALSE}
 # stepwise parameters selection with any interaction terms
@@ -355,7 +361,7 @@ BIC_MSPE
 
 We observe that the model selected by AIC is smaller compared to the previous section. The smaller model yields a better MSPE score which further confirms that the previous model selected by AIC has overfitted the training data. The detailed model summaries can be found in the appendix \ref{modelsummary2}.
 
-The model selected by BIC is still smaller than the one with AIC, and it also outperforms it. This model has different from Model 1 but is very parsimonious. Therefore, we decided to use the BIC model as our second candidate model, named Model 2.
+The model selected by BIC here is still smaller than the one with AIC, and it also outperforms it. However, as this model is different from Model 1 but is still very parsimonious, we decided to consider this BIC model as our second candidate model, named Model 2.
 
 The formula of Model 2 is:
 ```{r print model 2 formula}
@@ -508,18 +514,18 @@ f_lasso
 lasso_MSPE
 ``` 
 
-By comparing the performance on the testset, we observed that the model with the formula
+By comparing the model performance on the testset, we observed that the model with the formula
 
 ```{r printbestmodelformula}
 model2_f
 ``` 
 
-This model is also the most parsimonious and interpretable. Thus we shall further analyse this model and draw conclusion from it.
+This model is also the most parsimonious and interpretable. Thus we shall further analyze this model and draw conclusions from it.
 
 # Results
-Report on the findings of your analysis
 
-In the end, we looked at the model performance on the remaining test set and computed the MPSE of each model.
+We have built four models in the previous section and computed their performance scores on a test set. The MPSE of the four models we have considered are as follows:
+
 ```{r model prediction mse }
 Ridge_MSPE1
 Ridge_MSPE2
@@ -527,23 +533,27 @@ Ridge_MSPE3
 lasso_MSPE
 ```
 
-Now we shall take a closer look at our best model,
+We also decided in the last section that Model 2 has the best prediction performance, is the most interpretable and parsimonious. Thus, we shall now take a closer look at the parameters and coefficients of this model.
+
 ```{r coefbestmodel}
-coef(MBIC_reduced)
+coef(cv_ridge_model2)
 ``` 
 
+The output shows that Model 2 considers POP_furan3 and ageyrs and the coefficient values suggest that age and the PCB pollutant have a negative linear effect on average leukocyte telomere length. This implies that telomere length decreases with increasing age and increasing exposure to furan3. This result is intuitive as pollutants are harmful to human health thus accelerates telomere wear. 
 
-Comparing the MSE of the three different candidates we found earlier, model2 with the formula f = length ~ POP_furan3 + ageyrs has the best performance. As mentioned earlier, this model is also generalized, easy to interpret, and unlikely to get overfitted. We can now answer the question asked in our objective, that the age of the person, and the concentration of foran 3 contribute greatly to the average leukocyte telomere length in a person.
+As mentioned earlier, this model is generalized and unlikely to overfit, whic means we can use it to answer the questions in our objective section. From Model 2, we may conclude that both the age of a person and their exposure to furan 3 contribute greatly to the average leukocyte telomere length. 
 
+Furthermore, upon investigation into the other three models (in appendix \ref{modelcoef}), we noticed that with all models, age is significant as a covariate, while the other factors are not consistent. Hence we may conclude that based on the given data, the age of the person is the main factor in telomere length, and exposure to different pollutants tends to reduce the length as well.
 
 
 # Discussion
-Comment on your findings/conclusions; describe any limitations of your analysis.
 
-We have considered the multicollinearity and interactions within the eleven PCB covariates and similarly for the three dioxin covariates and four furan covariates. However, the multicollinearity and interactions between these eighteen exposure covariates and other covariates are not considered. It is expected that there does not exist any causal relationship between exposure covariates and other covariates since the former relates to the surrounding environment and the latter relates to personal characteristics. For example, it’s believed that the concentration of POP_PCB10 is unrelated to the value of ageyrs and BMI.
- 
-Besides, a linear regression model has four assumptions, namely linearity, normality, heteroskedasticity and independence. We have analyzed and confirmed that the first three assumptions hold. Generally, we can make the assumption of independence when constructing the model. To further confirm the assumption, time-series data and a closer look at the data collection process will be helpful.
+We know linear regression model has four assumptions, namely linearity, normality, homoscedasticity, and independence. We have analyzed and confirmed that the first three assumptions hold. Generally, we can assume independence when constructing the model. To further confirm the assumption, time-series data and a closer look at the data collection process will be helpful.
 
+In section \ref{investigateinteractions}, we have considered the interactions within the eleven PCB covariates, three dioxin covariates, and four furan covariates with different white blood cell components. It is expected that there is no causal relationship between exposure covariates and other personal characteristics variables. For example, it is reasonable to assume that the concentration of POP_PCB10 is unrelated to the value of ageyrs and BMI. However, it may still be useful to confirm this hypothesis by p-tests.
+
+
+In the result section, we have mentioned that age is always present as a covariate in our models, while other pollutants' effects are not always consistent. Thus it may be interesting to investigate linear models with age being the only covariate, as well as with removed from the dataset. The first shall tell us how the exact effect of age on telomere, while the latter shall provide insights into which human-adjustable factors have the most significant to telomere length in a person.
 
 
 \newpage
@@ -737,3 +747,9 @@ summary(MAIC_reduced)
 summary(MBIC_reduced)
 ```
 
+## Results Model Coefficients \label{modelcoef}
+```{r coef4all}
+coef(cv_ridge_model1)
+coef(cv_ridge_model3)
+coef(cvfit_lasso_oh)
+```
